@@ -6,6 +6,7 @@ Door Controller Test Tool
  - [Hardware](#hardware)
  - [Software](#software)
 - [Quick Start](#quick-start)
+ - [Dependencies](#dependencies)
  - [Basic Installation Steps](#basic-installation-steps)
 
 ## Overview
@@ -38,8 +39,18 @@ Two interfaces are provided for controlling input and reading output; HTTP and W
 
 * [The Arduino IDE](http://arduino.cc/en/main/software) - For uploading the Door Controller Test Tool software to the Arduino.
 * To use the web GUI, a browser which supports both WebSockets RFC6455 and AngularJS is needed (Chrome version 30+ should work fine).
+* There are dependencies to other Arduino libraries, see "Quick Start" for further details.
 
 ## Quick Start
+
+### Dependencies
+The following dependencies need to be downloaded and placed in your Arduino environment's "libraries" folder:
+
+1. [Arduino WebSocket Server](https://github.com/AxisCommunications/arduino-websocket-server)
+2. [SimpleTimer](https://github.com/jfturcot/SimpleTimer)
+3. [StandardCplusplus](https://github.com/maniacbug/StandardCplusplus)
+4. [Webduino](https://github.com/sirleech/Webduino)
+5. [aJSON](https://github.com/interactive-matter/aJson)
 
 ### Basic Installation Steps
 1. Clone the Door Controller Test Tool repository to your hard drive.
@@ -49,7 +60,7 @@ Two interfaces are provided for controlling input and reading output; HTTP and W
 5. Wire up the Arduino to the PACS device according to the pins- and doors configuration. See “Connecting the Arduino to the PACS Device” in the wiki  for further details.
 6. Format the SD card to FAT16, copy the contents of sd_card to the root of the card and insert it into the Arduino Ethernet Shield SD card slot.
 7. Upload the Door Controller Test Tool software to the Arduino. See “Uploading the Door Controller Test Tool Software” in the wiki for further details.
-8. You should now be able to start using Door Controller Test Tool by navigating to its IP address in a browser (or sending commands via HTTP/Websockets).
+8. You should now be able to start using Door Controller Test Tool by navigating to its IP address in a browser (or sending commands via HTTP/Websockets). See “Interfacing with the Door Controller Test Tool Software” in the wiki for further details
 
 ### Detailed Instructions
 
