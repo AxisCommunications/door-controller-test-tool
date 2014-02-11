@@ -1,0 +1,404 @@
+
+<html ng-app="app">
+  <head>
+    <title>Door Controller Test Tool</title>
+    <meta name="viewport" content="width=device-width">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="http://bootswatch.com/flatly/bootstrap.min.css">
+    <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.min.js"></script>    
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.9.0/ui-bootstrap-tpls.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-route.min.js"></script>  
+    <script src="app.js"></script>
+    <!-- To fix navbar -->
+
+    <style type="text/css">
+      .hand {
+        cursor: pointer;
+      }    
+      .icon {    
+      text-shadow: 3px 3px 3px #ccc;  
+      }    
+      .greenLED-on {
+        color:#92CD00;
+      }
+      .greenLED-off {
+        color:#D74B4B;
+      }
+
+    </style>
+
+<!--
+################################################################################################
+#
+#  PARTIALS
+#
+################################################################################################
+-->
+
+<!-- READER PARTIAL-->
+<script type="text/ng-template" id="reader.htm">
+  <div class="panel panel-default">
+    
+    <div class="panel-heading">
+      Reader 
+      <small class="pull-right text-muted"><em>{{reader.Wiegand.Id}}</em></small>
+    </div>  
+
+    <div class="panel-body">
+      <!-- PIN DIGITS -->
+      <div>
+        <div>
+          <span>
+            <p class="text-center">
+            <i class="fa fa-circle fa-2x" ng-class="{'greenLED-on': reader['GreenLED'].IsActive, 'greenLED-off': !reader['GreenLED'].IsActive}"></i>
+            &nbsp
+            <i class="fa fa-2x" ng-class="{'fa-volume-up': reader['Beeper'].IsActive, 'fa-volume-off': !reader['Beeper'].IsActive}"></i>
+            </p>
+          </span>
+
+          <span>
+            
+          </span>
+        </div>
+        <br>
+        <div class="btn-group btn-group-justified">
+          <a id="keypad-1" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('1', door.Id, reader.Wiegand.Id)"><strong>1</strong></a>
+          <a id="keypad-2" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('2', door.Id, reader.Wiegand.Id)"><strong>2</strong></a>
+          <a id="keypad-3" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('3', door.Id, reader.Wiegand.Id)"><strong>3</strong></a>
+        </div>
+        <br>
+        <div class="btn-group btn-group-justified">
+          <a id="keypad-4" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('4', door.Id, reader.Wiegand.Id)"><strong>4</strong></a>
+          <a id="keypad-5" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('5', door.Id, reader.Wiegand.Id)"><strong>5</strong></a>
+          <a id="keypad-6" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('6', door.Id, reader.Wiegand.Id)"><strong>6</strong></a>
+        </div>
+        <br>
+        <div class="btn-group btn-group-justified">
+          <a id="keypad-7" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('7', door.Id, reader.Wiegand.Id)"><strong>7</strong></a>
+          <a id="keypad-8" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('8', door.Id, reader.Wiegand.Id)"><strong>8</strong></a>
+          <a id="keypad-9" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('9', door.Id, reader.Wiegand.Id)"><strong>9</strong></a>
+        </div>
+        <br>
+        <div class="btn-group btn-group-justified">
+          <a id="keypad-asterisk" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('*', door.Id, reader.Wiegand.Id)">
+            <i class="fa fa-asterisk"> </i>
+          </a>
+          <a id="keypad-0" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('0', door.Id, reader.Wiegand.Id)"><strong>0</strong></a>
+          <a id="keypad-hash" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('#', door.Id, reader.Wiegand.Id)"><strong>#</strong></a>
+        </div>
+      </div>
+      <br>
+      <!-- SEND PIN -->
+      
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="PIN Code" ng-disabled="!isConnected()" ng-model="pinSequence">
+        <span class="input-group-btn">
+          <button class="btn btn-default" type="button" ng-disabled="!isConnected()" ng-click="sendPinSequence(pinSequence, door.Id, reader.Wiegand.Id)"><i class="fa fa-mail-reply fa-lg"></i>&nbsp
+          </button>
+        </span>
+      </div>
+      <br>
+      <!-- SWIPE CARD -->
+      
+      <div>            
+        <div id="cardTextField" class="row">
+          <div style="padding-right: 0px" class="col-xs-4 col-md-4">
+            <input id="facilityCodeTextField" type="text" class="form-control" placeholder="Fac. Code" ng-disabled="!isConnected()" ng-model="facilityCode">
+          </div>
+          <div style="padding-left: 2px" class="col-xs-12 col-md-8">
+            <div class="input-group">
+              <input id="cardNumberTextField" type="text" class="form-control" placeholder="Card Number" ng-disabled="!isConnected()" ng-model="cardNumber">
+              <span class="input-group-btn">                                            
+                <button id="swipeButton" class="btn btn-default" type="button" ng-disabled="!isConnected()" ng-click="swipeCard(facilityCode, cardNumber, door.Id, reader.Wiegand.Id)"><i class="fa fa-rotate-90 fa-credit-card fa-lg"></i>&nbsp</button>
+              </span>
+            </div>
+          </div>            
+        </div>
+      </div>    
+    </div>
+
+  </div>  
+</script>
+
+<!-- LOCK PARTIAL-->
+<script type="text/ng-template" id="lock.htm">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+    Lock <small class="pull-right text-muted"><em>{{lock.Id}}</em></small>
+    </div>
+    <div class="panel-body">
+      <div>
+          <p ng-show="isConnected()" align="center">
+            <i class="icon fa fa-4x" ng-class="{'fa-lock': lock.IsActive, 'fa-unlock': !lock.IsActive}"></i>
+        </p>      
+      </div>
+    </div>
+  </div>
+</script>
+
+<!-- DOOR MONITOR PARTIAL-->
+<script type="text/ng-template" id="doormon.htm">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      Door <small class="pull-right text-muted"><em>{{doormonitor.Id}}</em></small>
+    </div>
+    <div class="panel-body">
+      <div>
+        <p ng-show="isConnected()" align="center"><i class="fa fa-rotate-90 fa-3x" ng-class="{'fa-folder-open': doormonitor.IsActive, 'fa-folder': !doormonitor.IsActive}"></i></p>
+
+        <button ng-show="isConnected()" id="doorMonitor" type="button" class="btn btn-default btn-md btn-block" ng-disabled="!isConnected()" ng-click="getDoorButton(door, doormonitor).action()">
+          {{getDoorButton(door, doormonitor).text}}
+        </button>      
+      </div>
+    </div>
+  </div>
+</script>
+
+
+<!-- REX PARTIAL-->
+<script type="text/ng-template" id="rex.htm">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      REX <small class="pull-right text-muted"><em>{{rex.Id}}</em></small>
+    </div>
+    <div class="panel-body">
+      <div>        
+        <div class="row">
+          <div class="col-md-4"></div>
+          <div class="col-md-4">
+            <button id="rexButton" type="button" class="btn btn-default btn-lg btn-block" ng-disabled="!isConnected()" ng-click="pushRexButton(door.Id, rex.Id)">           
+              <i class="fa fa-sign-out fa-2x fa-inverse"></i>           
+            </button>      
+          </div>
+          <div class="col-md-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>  
+</script>
+
+<!-- DOOR CONTROL PARTIAL-->
+<script type="text/ng-template" id="doorctrl.htm">
+    <div ng-controller="DoorsCtrl">
+      
+      <div ng-show="!doors">
+        <p align="center"><i class="fa fa-spinner fa-spin fa-5x"></i></p>
+        <p align="center">Loading door configuration...</p>
+      </div> 
+      
+      <div ng-show="doors">      
+        <tabset>
+          <tab ng-repeat="door in doors">
+            <tab-heading ng-class="{'hand': true}"><strong>{{door.Id}}</strong></tab-heading>
+                <br>
+                <div class="panel">
+                  <div class="row">
+
+                    <!-- LEFT -->
+
+                    <div class="col-md-4">                
+                      <div ng-repeat="reader in door.Reader" ng-if="reader.Direction == 'In'">
+                        <reader></reader>
+                      </div>
+                      
+                      <div ng-repeat="rex in door.REX" ng-if="rex.Direction == 'In'">
+                        <rex></rex>
+                      </div>            
+                    </div>
+
+                    <!-- MIDDLE -->
+
+                    <div class="col-md-4">                    
+                      <div class="row">
+                        
+                        <div class="col-md-6" ng-repeat="doormonitor in door.DoorMonitor">
+                          <doormonitor></doormonitor>
+                        </div>            
+                        
+                        <div class="col-md-6" ng-repeat="lock in door.Lock">
+                          <lock></lock>
+                        </div>                        
+
+                      </div>
+                    </div>
+
+                    <!-- RIGHT -->
+
+                    <div class="col-md-4">        
+                      <div ng-repeat="reader in door.Reader" ng-if="reader.Direction == 'Out'">
+                        <reader></reader>
+                      </div>
+                      <div ng-repeat="rex in door.REX" ng-if="rex.Direction == 'Out'">
+                        <rex></rex>
+                      </div> 
+                    </div>
+
+
+                  </div>
+                </div>
+          </tab>      
+        </tabset>    
+      </div>      
+    </div>      
+
+    <div class="row">
+      <div class="col-md-12">
+        <div ng-controller="AlertCtrl">
+          <alert ng-repeat="alert in alerts" type="alert.type" close="closeAlert($index)">
+            <i class="fa fa-warning"></i> {{alert.msg}}
+          </alert>
+        </div>
+       </div>     
+    </div>
+</script>
+
+<!-- CONFIG PARTIAL-->
+<script type="text/ng-template" id="config.htm">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      Network Settings
+    </div>
+    <div class="panel-body">
+      TODO
+      <!--
+      <form role="form">
+        
+        <div class="form-group">
+            <div class="checkbox">
+              <label>
+                <input type="checkbox"> DHCP Enabled
+              </label>
+            </div>
+        </div>
+
+
+        <div class="form-group">
+          <label for="inputMACAddress">MAC Address</label>
+            <input type="text" class="form-control" id="inputMACAddress" placeholder="MAC Address">
+        </div>
+
+        <div class="form-group">
+          <label for="inputIPAddress">IP Address</label>
+            <input type="text" class="form-control" id="inputIPAddress" placeholder="IP Address">
+        </div>
+
+        <div class="form-group">
+          <label for="inputNetmask">Netmask</label>
+            <input type="text" class="form-control" id="inputNetmask" placeholder="Netmask">
+        </div>
+
+        <div class="form-group">
+          <label for="inputGateway">Gateway</label>
+            <input type="text" class="form-control" id="inputGateway" placeholder="Gateway">
+        </div>
+
+        <div class="form-group">
+          <label for="inputDNS">DNS</label>
+            <input type="text" class="form-control" id="inputDNS" placeholder="DNS">
+        </div>
+
+        <div class="row">
+          
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="inputHTTPPort">HTTP Port</label>
+              <input type="number" min="0" max="65535" class="form-control" id="inputHTTPPort" placeholder="80">
+            </div>  
+          </div>            
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="inputWebsocketPort">WebSocket Port</label>
+              <input type="number" min="0" max="65535" class="form-control" id="inputWebsocketPort" placeholder="8888">      
+            </div>  
+          </div>
+
+        </div>    
+
+        <div class="form-group">
+            <button type="submit" class="btn btn-default">Apply</button>
+        </div>
+      </form> 
+      -->
+    </div> 
+  </div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+      PIN Mappings
+    </div>
+    <div class="panel-body">
+      TODO
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+      Door Configuration
+    </div>
+    <div class="panel-body">
+      TODO
+    </div>
+</div>
+
+</script>
+</head>
+
+<!--
+################################################################################################
+#
+#  MAIN BODY
+#
+################################################################################################
+-->
+
+<body>
+  <br>
+  <div class="container">
+
+    <!-- NAVBAR -->
+
+    <nav class="navbar navbar-default" role="navigation" ng-controller="NavCtrl">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Door Controller Test Tool</a>
+        </div>        
+        <ul class="nav navbar-nav">
+        </ul>  
+
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav navbar-right">           
+            <li>
+            <button ng-controller="NavCtrl" ng-click="toggleConnection()" id="connectionButton" class="btn btn-default navbar-btn">
+              {{connectionButtonText()}}
+            </button>
+            </li>
+             <li>&nbsp&nbsp</li> 
+            <li ng-class="{'active': location.path() == '/'}"><a href="#">
+            <i class="fa fa-male fa-lg"></i>&nbsp&nbspSimulate</a></li>
+            <li ng-class="{'active': location.path() == '/config'}"><a href="#/config">
+            <i class="fa fa-cog fa-lg"></i>&nbsp&nbspSettings</a></li>
+
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN VIEW AREA -->
+
+    <div ng-view></div>
+
+    <div>
+      <p class="text-center"><small>Footer text placeholder.</small></p>
+    </div>
+
+  </div>
+</body>
+</html>
