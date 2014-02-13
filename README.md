@@ -47,10 +47,12 @@ Two interfaces are provided for controlling input and reading output; HTTP and W
 The following dependencies need to be downloaded and placed in your Arduino environment's "libraries" folder:
 
 1. [Arduino WebSocket Server](https://github.com/AxisCommunications/arduino-websocket-server)
-2. [SimpleTimer](https://github.com/jfturcot/SimpleTimer)
-3. [StandardCplusplus](https://github.com/maniacbug/StandardCplusplus)
-4. [Webduino](https://github.com/sirleech/Webduino)
-5. [aJSON](https://github.com/interactive-matter/aJson)
+2. [StandardCplusplus](https://github.com/maniacbug/StandardCplusplus)
+3. [Webduino](https://github.com/sirleech/Webduino)
+4. [aJSON](https://github.com/interactive-matter/aJson)
+
+NOTE: After installing the StandardCplusplus library, edit the [ArduinoLibraryFolder]/StandardCplusplus/system_configuration.h file and change
+`#define __UCLIBCXX_STL_BUFFER_SIZE__ 8` to `#define __UCLIBCXX_STL_BUFFER_SIZE__ 0`. We do this to avoid the vector implementation from allocating too much memory.
 
 ### Basic Installation Steps
 1. Clone the Door Controller Test Tool repository to your hard drive.
