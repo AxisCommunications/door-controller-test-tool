@@ -5,7 +5,7 @@ Door Controller Test Tool
 - [Requirements](#requirements)
  - [Hardware](#hardware)
  - [Software](#software)
-- [Quick Start](#quick-start)
+- [Getting Started](#getting-started)
  - [Dependencies](#dependencies)
  - [Basic Installation Steps](#basic-installation-steps)
 
@@ -41,7 +41,7 @@ Two interfaces are provided for controlling input and reading output; HTTP and W
 * To use the web GUI, a browser which supports both WebSockets RFC6455 and AngularJS is needed (Chrome version 30+ should work fine).
 * There are dependencies to other Arduino libraries, see "Quick Start" for further details.
 
-## Quick Start
+## Getting Started
 
 ### Dependencies
 The following dependencies need to be downloaded and placed in your Arduino environment's "libraries" folder:
