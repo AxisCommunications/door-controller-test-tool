@@ -1,6 +1,5 @@
 /*
 Copyright (C) 2014 Axis Communications
-
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
@@ -27,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define WEBDUINO_FAIL_MESSAGE ""
 
 // Buffer for sending files to client.
-#define FILE_TX_BUFFER_SIZE 512
+#define FILE_TX_BUFFER_SIZE 64
 
 // Reserved pins.
 #define ETHERNET_SELECT_PIN 10
@@ -48,8 +47,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "WebServer.h"
 
 #include <SD.h>
-#include <EEPROM.h>
-#include "EEPROMAnything.h"
 
 #include "aJSON.h"
 #include "SimpleTimer.h"
@@ -59,11 +56,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <vector>
 #include <serstream>
 
+// Door-specific files.
 #include "PACSDoor.h"
 #include "PACSReader.h"
 #include "PACSPeripheral.h"
 #include "PACSDoorManager.h"
 
+// For freemem.
 #include "System.h"
 
 #ifdef BONJOUR_ENABLED
@@ -960,6 +959,7 @@ void webAppFile(WebServer &server, WebServer::ConnectionType type, char **url_pa
   else {
     errorHTML(server, type, url_tail, tail_complete);
   }  
+
 }
 
 /*
@@ -1153,7 +1153,7 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
     }
 
     server.httpSuccess("text/html", NULL);
-    server.write("OK\n");
+    server.printP(ok);
 
   }
 }
