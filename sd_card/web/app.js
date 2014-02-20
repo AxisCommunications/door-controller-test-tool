@@ -270,7 +270,6 @@ app.controller('DoorsCtrl', ['$scope', 'ConfigService', 'WebsocketService', 'Ale
     };
 
     $scope.pushRexButton = function(doorId, id) {
-      console.log("YEAH")
       if (doorId && id) {
         WebsocketService.pushRexButton(doorId, id);
       }
@@ -460,7 +459,6 @@ app.controller('DoorsCtrl', ['$scope', 'ConfigService', 'WebsocketService', 'Ale
       }, 
       // If request failed we show an alert.
       function(response) {
-        console.log(response)
         AlertService.addAlert("danger", "Could not get configuration from Arduino.");
       }
     );
