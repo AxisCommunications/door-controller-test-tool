@@ -61,8 +61,17 @@ bool PACSDoorManager::swipeCard(char* doorId, char* readerId, unsigned long faci
     
     PACSDoor* d = findDoorById(doorId);
     if (d != NULL) {
-        return d->swipeCard(readerId, facilityCode, cardNumber);        
+        if (d->swipeCard(readerId, facilityCode, cardNumber)) {
+            cout << "[" << doorId << "|" << readerId << "]"<< F(": Card swiped. Facility code: ") 
+                 << facilityCode << F(". Card number: ") << cardNumber << endl;        
+             return true;
+        }
+        else {
+            cout << "Reader not found: " << readerId << endl;
+            return false;
+        }
     }
+    cout << "Door not found: " << doorId << endl;
     return false;
 }
 
@@ -73,8 +82,17 @@ bool PACSDoorManager::enterPIN(char* doorId, char* readerId, char* code) {
         
     PACSDoor* d = findDoorById(doorId);
     if (d != NULL) {
-        return d->enterPIN(readerId, code);
+        if (d->enterPIN(readerId, code)) {
+            cout << "[" << doorId << "|" << readerId << "]" << F(": Entered PIN digit(s): ") 
+                 << code << endl;        
+            return true;
+        }
+        else {
+            cout << "Reader not found: " << readerId << endl;
+            return false;
+        }
     }
+    cout << "Door not found: " << doorId << endl;
     return false;    
 }
 
@@ -85,8 +103,16 @@ bool PACSDoorManager::openDoor(char* doorId, char* doorMonitorId) {
 
     PACSDoor* d = findDoorById(doorId);
     if (d != NULL) {
-        return d->openDoor(doorMonitorId);
+        if (d->openDoor(doorMonitorId)) {
+            cout << "[" << doorId << "|" << doorMonitorId << "]" << F(": Door opened.") << endl;        
+            return true;
+        }
+        else {
+            cout << "Peripheral not found: " << doorMonitorId << endl;
+            return false;
+        }        
     }
+    cout << "Door not found: " << doorId << endl;
     return false;    
 }
 
@@ -97,8 +123,16 @@ bool PACSDoorManager::closeDoor(char* doorId, char* doorMonitorId) {
     
     PACSDoor* d = findDoorById(doorId);
     if (d != NULL) {
-        return d->closeDoor(doorMonitorId);
+        if (d->closeDoor(doorMonitorId)) {
+            cout << "[" << doorId << "|" << doorMonitorId << "]" << F(": Door closed.") << endl;        
+            return true;
+        }
+        else {
+            cout << "Peripheral not found: " << doorMonitorId << endl;
+            return false;
+        }                
     }
+    cout << "Door not found: " << doorId << endl;
     return false;    
 }
 
@@ -109,8 +143,16 @@ bool PACSDoorManager::pushREX(char* doorId, char* rexId) {
 
     PACSDoor* d = findDoorById(doorId);
     if (d != NULL) {
-        return d->pushREX(rexId);
-    }
+        if (d->pushREX(rexId)) {
+            cout << "[" << doorId << "|" << rexId << "]" << F(": REX pushed.") << endl;        
+            return true;
+        }
+        else {
+            cout << "Peripheral not found: " << rexId << endl;
+            return false;
+        }                
+    }        
+    cout << "Door not found: " << doorId << endl;
     return false;    
 }
 

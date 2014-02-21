@@ -1188,8 +1188,6 @@ void onStateChange(PACSDoor &door, PACSPeripheral &p) {
   aJson.addStringToObject(update, "DoorId", door.id);
   aJson.addStringToObject(update, "Id", p.id);
 
-  cout << F("Statechange: ");
-
   switch (p.type) {        
     case GREENLED:
     case BEEPER:
@@ -1197,21 +1195,24 @@ void onStateChange(PACSDoor &door, PACSPeripheral &p) {
     case REX:
     case LOCK:    
   
-      if (p.isActive())
+      cout << "[" << door.id << "|" << p.id << "]: ";
+
+      if (p.isActive()) {
+        cout << F("is ACTIVE\n");
         aJson.addTrueToObject(update, "IsActive");
-      else 
+      }
+      else {
+        cout << F("is INACTIVE\n");
         aJson.addFalseToObject(update, "IsActive");  
+      }
+  
       break;
-    
+  
     default:
-      cout << F("Unknown periperhal:") << p.id << endl;
+      cout << "[" << door.id << "|" << p.id << "]: Unknown periperhal";
       break;
   }  
   
-  cout << p.id;
-  cout << " active: ";
-  cout << p.isActive() <<  endl;
-
   // Render the JSON string. 
   char *json_string = aJson.print(root);
 

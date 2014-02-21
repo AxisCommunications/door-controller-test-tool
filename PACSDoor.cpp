@@ -104,12 +104,8 @@ bool PACSDoor::swipeCard(char* readerId, unsigned long facilityCode, unsigned lo
   
   if (r != NULL) {
     assembleWiegandData(facilityCode, cardNumber, r->pin0, r->pin1);        
-    cout << r->id << F(": Swiped card. Facility code: ") << facilityCode 
-         << F(". Card number: ") << cardNumber << endl;
-
     return true;
   } 
-  cout << F("Reader not found: ") << readerId << endl;
   return false;
 }
 
@@ -122,10 +118,8 @@ bool PACSDoor::enterPIN(char* readerId, char* code) {
 
     if (r != NULL) {
         sendPIN(code, r->pin0, r->pin1);       
-        cout << r->id << F(": Entered PIN digit(s): ") << code << endl;        
         return true;
     }
-    cout << F("Reader not found: ") << readerId << endl;
     return false;
 }
 
@@ -137,10 +131,8 @@ bool PACSDoor::openDoor(char* doorMonitorId) {
     PACSPeripheral* p = findPeripheralById(doorMonitorId);
     if (p != NULL) {
         setPinActive(p->pin, p->activeLevel);       
-        cout << p->id << F(": ") << F("Opened door.") << endl;
         return true;        
     }
-    cout << F("Peripheral not found: ") << doorMonitorId << endl;
     return false;    
 }
 
@@ -152,10 +144,8 @@ bool PACSDoor::closeDoor(char* doorMonitorId) {
     PACSPeripheral* p = findPeripheralById(doorMonitorId);
     if (p != NULL) {
         setPinInactive(p->pin, p->activeLevel);       
-        cout << p->id << F(": ") << F("Closed door.") << endl;
         return true;        
     }
-    cout << F("Peripheral not found: ") << doorMonitorId << endl;
     return false;    
 }
 
@@ -167,12 +157,10 @@ bool PACSDoor::pushREX(char* rexId) {
     PACSPeripheral* p = findPeripheralById(rexId);
     if (p != NULL) {
         setPinActive(p->pin, p->activeLevel);      
-        cout << p->id << F(": ") << F("Pushed REX button.") << endl;
+        delay(10);
         setPinInactive(p->pin, p->activeLevel);        
         return true;        
     }
-    
-    cout << F("Peripheral not found: ") << rexId << endl;
     return false;    
 }
 
@@ -184,8 +172,6 @@ void PACSDoor::updateLevels() {
     // Update the levels for all registered peripherals and if there has 
     // been a change  in the different pin states, call the registered callback.
     for (unsigned i=0; i < peripherals.size(); i++) {        
-        //cout << "UPDATING: " << peripherals[i].id << " TYPE: " << peripherals[i].type 
-        //     << " PIN: " << (int)peripherals[i].pin << endl;
         peripherals[i].updateLevels();        
         if (onStateChangeCallback) {
             if (peripherals[i].levelChanged) {
