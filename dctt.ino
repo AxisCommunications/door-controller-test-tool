@@ -118,10 +118,10 @@ typedef enum Command
     OPENDOOR,
     CLOSEDOOR,
     PUSHREX,
-    GETDOORMONITORSTATUS,
-    GETREXSTATUS,
-    GETLOCKSTATUS,
+    GETPERIPHERALSTATE,
+    GETNETWORKCONFIG,
     GETDOORCONFIG,
+    GETPINCONFIG,
     SETCONFIG,
     UNDEFINED,
 };
@@ -1003,10 +1003,11 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
   char id[16] = {'\0'};
   char doorId[16] = {'\0'};
   int facilityCode = -1;
-  long cardNumber = 0;
+  long cardNumber = -1;
   char pin[16] = {'\0'};
 
    P(out_of_bounds) = "Card or facility-code is out of bounds.\n";
+   P(card_not_specified) = "Card or facility-code not specified.\n";
    P(id_not_found) = "Request failed. No door and/or reader/peripheral found with specified id(s).\n";
    P(unknown_command) = "Unknown command.\n";
    P(could_not_open_door_config_file) = "Could not open door config file for reading.";
@@ -1035,10 +1036,10 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
           else if (strcmp(value, "opendoor") == 0) cmd = OPENDOOR;
           else if (strcmp(value, "closedoor") == 0) cmd = CLOSEDOOR;
           else if (strcmp(value, "pushrex") == 0) cmd = PUSHREX;
-          else if (strcmp(value, "getdoormonitorstatus") == 0) cmd = GETDOORMONITORSTATUS;
-          else if (strcmp(value, "getrexstatus") == 0) cmd = GETREXSTATUS;
-          else if (strcmp(value, "getlockstatus") == 0) cmd = GETLOCKSTATUS;
+          else if (strcmp(value, "getperipheralstate") == 0) cmd = GETPERIPHERALSTATE;
+          else if (strcmp(value, "getnetworkconfig") == 0) cmd = GETNETWORKCONFIG;
           else if (strcmp(value, "getdoorconfig") == 0) cmd = GETDOORCONFIG;
+          else if (strcmp(value, "getpinconfig") == 0) cmd = GETPINCONFIG;
           else cmd = UNDEFINED;
         }
         // 
@@ -1075,19 +1076,24 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
     switch (cmd) {
       // SwipeCard Command
       case SWIPECARD:
-          // First check that the input parameters are valid.
-          if (!((facilityCode>=0) && (facilityCode<=255) && (cardNumber>=0) && (cardNumber<=65535))) {
+          // First check that the input parameters are there.
+          if ((facilityCode == -1) || (cardNumber == -1)) {            
+            apiResponse(false, card_not_specified);
+            return;
+          }          
+          // Then check that the input parameters are valid.
+          else if (!((facilityCode>=0) && (facilityCode<=255) && (cardNumber>=0) && (cardNumber<=65535))) {            
             apiResponse(false, out_of_bounds);
             return;
           }
-          // And if so, execute the command. If unsuccessful
+          // And if so, execute the command and tell user if it successful or not.
           else if(!doorManager.swipeCard(doorId, id, facilityCode, cardNumber)) {        
             apiResponse(false, id_not_found);
             return;
           }
         break;
      
-      // Enter pin Command
+      // Enter pin command
       case ENTERPIN:
         if (!doorManager.enterPIN(doorId, id, pin)) {        
           apiResponse(false, id_not_found);
@@ -1095,7 +1101,7 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
         } 
         break;
      
-      // Open door Command
+      // Open door command
       case OPENDOOR:
         if (!doorManager.openDoor(doorId, id)) {        
           apiResponse(false, id_not_found);
@@ -1103,7 +1109,7 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
         } 
         break;
      
-     // Close door Command
+     // Close door command
       case CLOSEDOOR:
         if (!doorManager.closeDoor(doorId, id)) {        
           apiResponse(false, id_not_found);
@@ -1111,20 +1117,16 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
         }
         break;
      
-      // Push REX Command
+      // Push REX command
       case PUSHREX:
         if (!doorManager.pushREX(doorId, id)) {        
           apiResponse(false, id_not_found);
           return;
         }        
         break;      
-      
-      // Get door monitor status command
-      case GETDOORMONITORSTATUS:
-      // Get REX status command
-      case GETREXSTATUS:            
-      // Get lock status command
-      case GETLOCKSTATUS:
+
+      // Get peripheral state command
+      case GETPERIPHERALSTATE:
         {
           int isActive = doorManager.isPeripheralActive(doorId, id);
           if (isActive == -1) {        
@@ -1138,6 +1140,16 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
           }
           return;  
         }
+
+      // Get door config command
+      case GETNETWORKCONFIG:
+        {                  
+          sendFile(server, "application/json", networkConfigFilename);
+          return;    
+        }
+        break;
+
+
       // Get door config command
       case GETDOORCONFIG:
         {                  
@@ -1145,6 +1157,16 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
           return;    
         }
         break;
+
+      // Get pin config command
+      case GETPINCONFIG:
+        {                  
+          sendFile(server, "application/json", pinsConfigFilename);
+          return;    
+        }
+        break;
+      
+
       case UNDEFINED:
       default:
         server.httpFail();
