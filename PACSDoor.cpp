@@ -129,7 +129,7 @@ bool PACSDoor::enterPIN(char* readerId, char* code) {
 bool PACSDoor::openDoor(char* doorMonitorId) {        
 
     PACSPeripheral* p = findPeripheralById(doorMonitorId);
-    if (p != NULL) {
+    if ((p != NULL) && (p->type == DOORMONITOR)) {
         setPinActive(p->pin, p->activeLevel);       
         return true;        
     }
@@ -142,7 +142,7 @@ bool PACSDoor::openDoor(char* doorMonitorId) {
 bool PACSDoor::closeDoor(char* doorMonitorId) {
     
     PACSPeripheral* p = findPeripheralById(doorMonitorId);
-    if (p != NULL) {
+    if ((p != NULL) && (p->type == DOORMONITOR)) {
         setPinInactive(p->pin, p->activeLevel);       
         return true;        
     }
@@ -155,7 +155,7 @@ bool PACSDoor::closeDoor(char* doorMonitorId) {
 bool PACSDoor::pushREX(char* rexId) {
 
     PACSPeripheral* p = findPeripheralById(rexId);
-    if (p != NULL) {
+    if ((p != NULL) && (p->type == REX)) {
         setPinActive(p->pin, p->activeLevel);      
         delay(10);
         setPinInactive(p->pin, p->activeLevel);        

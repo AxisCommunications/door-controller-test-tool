@@ -1176,6 +1176,7 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
 
     server.httpSuccess("text/html", NULL);
     server.printP(ok);
+    server.printCRLF();
 
   }
 }
