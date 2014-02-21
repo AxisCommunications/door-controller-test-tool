@@ -46,23 +46,20 @@
       <small class="pull-right text-muted"><em>{{reader.Wiegand.Id}}</em></small>
     </div>  
 
-    <div class="panel-body">
-      <!-- PIN DIGITS -->
-      <div>
-        <div>
+    <div class="panel-body">      
+      <div ng-if="reader['GreenLED'] || reader['Beeper']">        
+        <!-- LED & BEEPER -->
           <span>
             <p class="text-center">
-            <i class="fa fa-circle fa-2x" ng-class="{'greenLED-on': reader['GreenLED'].IsActive, 'greenLED-off': !reader['GreenLED'].IsActive}"></i>
-            &nbsp
-            <i class="fa fa-2x" ng-class="{'fa-volume-up': reader['Beeper'].IsActive, 'fa-volume-off': !reader['Beeper'].IsActive}"></i>
+              <i ng-if="reader['GreenLED']" class="fa fa-circle fa-2x" ng-class="{'greenLED-on': reader['GreenLED'].IsActive, 'greenLED-off': !reader['GreenLED'].IsActive}"></i>
+              &nbsp
+                <i ng-if="reader['Beeper']" class="fa fa-2x" ng-class="{'fa-volume-up': reader['Beeper'].IsActive, 'fa-volume-off': !reader['Beeper'].IsActive}"></i>
             </p>
-          </span>
-
-          <span>
-            
-          </span>
+          </span>          
         </div>
+
         <br>
+        <!-- PIN DIGITS -->
         <div class="btn-group btn-group-justified">
           <a id="keypad-1" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('1', door.Id, reader.Wiegand.Id)"><strong>1</strong></a>
           <a id="keypad-2" class="btn btn-default" ng-mousedown="keypadPlaySound()" ng-class="isConnected() ? '' : 'disabled'" ng-click="keypadPress('2', door.Id, reader.Wiegand.Id)"><strong>2</strong></a>
