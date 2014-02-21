@@ -42,28 +42,28 @@ void PACSPeripheral::initialize() {
     * We set them to inactive to avoid any issues if the pin 
     * is not actually connected to anything.    
     */    
+    
+    int initialLevel = ((activeLevel == HIGH) ? LOW : HIGH);
+    currentLevel = previousLevel = initialLevel;
+    levelChanged = false;
+
     switch (type) {
         case DOORMONITOR:
         case REX:
             pinMode(pin, OUTPUT);
-            break;
-        
+            digitalWrite(pin, initialLevel);    
+            break;                        
+
         case GREENLED:
         case BEEPER:
-            pinMode(pin, INPUT);
-            break;
-
         case LOCK:
-            pinMode(pin, INPUT);    
+            pinMode(pin, INPUT);
+            digitalWrite(pin, initialLevel);    
             break;
         
         default:
             break;
     }
-    int initialLevel = ((activeLevel == HIGH) ? LOW : HIGH);
-    digitalWrite(pin, initialLevel);    
-    currentLevel = previousLevel = initialLevel;
-    levelChanged = false;
 }
 
 /*
@@ -78,18 +78,10 @@ void PACSPeripheral::updateLevels() {
         case REX:
         case GREENLED:
         case BEEPER:
+        case LOCK:                                
             currentLevel = digitalRead(pin);
             break;
-        case LOCK:                                
-            voltage = (analogRead(pin) * (VOLTAGE_INPUT / 1023.0));            
-            if (voltage >= VOLTAGE_THRESHOLD_HIGH) {
-                currentLevel = HIGH;
-            }
-            else if (voltage < VOLTAGE_THRESHOLD_LOW) {
-                currentLevel = LOW;
-            }
-            break;
-        
+
         default:
             break;
     }

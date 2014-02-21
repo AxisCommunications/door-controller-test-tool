@@ -21,10 +21,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <Arduino.h>
 
-#define VOLTAGE_INPUT 5.0f // What is the input voltage from lock. (Should be max 5V, otherwise we damage the hardware)
-#define VOLTAGE_THRESHOLD_HIGH 4.5f // At what value we regard the lock as being locked/unlocked.
-#define VOLTAGE_THRESHOLD_LOW 0.9f // At what value we regard the lock as being locked/unlocked.
-
 #define PERIPHERAL_ID_MAX_LENGTH 16 // The max number of characters for the ID.
 
 typedef enum {GREENLED, BEEPER, DOORMONITOR, REX, LOCK} PACSPeripheralType_t;
