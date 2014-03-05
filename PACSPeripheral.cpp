@@ -58,7 +58,6 @@ void PACSPeripheral::initialize() {
         case BEEPER:
         case LOCK:
             pinMode(pin, INPUT);
-            digitalWrite(pin, initialLevel);    
             break;
         
         default:
@@ -86,10 +85,12 @@ void PACSPeripheral::updateLevels() {
             break;
     }
 
-    if (currentLevel != previousLevel)
+    if (currentLevel != previousLevel) {
         levelChanged = true;
-    else 
+    }
+    else {
         levelChanged = false;
+    }
 
     previousLevel = currentLevel;
 }
