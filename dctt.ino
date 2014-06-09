@@ -118,6 +118,8 @@ typedef enum Command
     OPENDOOR,
     CLOSEDOOR,
     PUSHREX,
+    ACTIVATEINPUT,
+    DEACTIVATEINPUT,
     GETPERIPHERALSTATE,
     GETNETWORKCONFIG,
     GETDOORCONFIG,
@@ -253,7 +255,7 @@ void waitForData(Stream& stream, int timeout) {
 bool getNextToken(Stream& stream, char* tokenBuffer, uint8_t length) {
 
   stream.find("\"");
-  uint8_t bytesRead = stream.readBytesUntil('\"', tokenBuffer, length);
+  uint8_t bytesRead = stream.readBytesUntil('"', tokenBuffer, length);
   tokenBuffer[bytesRead] = '\0';
 
   if (bytesRead > 0)
@@ -268,7 +270,7 @@ bool getNextToken(Stream& stream, char* tokenBuffer, uint8_t length) {
 // the global one.
 namespace Cfg {
   enum Pos {
-            NONE, DOOR, READER, DOOR_MONITOR, REX, LOCK, //Container
+            NONE, DOOR, READER, DOOR_MONITOR, REX, LOCK, CONTACT, RELAY, //Container
             WIEGAND, GREEN_LED, BEEPER, //Subcontainer
             ID, PIN, PIN_ZERO, PIN_ONE, ACTIVE //Property
             };
@@ -472,6 +474,16 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
       cfgParent = Cfg::DOOR;  
       openBraces = 0;
     }     
+    else if (strcmp(token, "Input") == 0) {   
+      cfgPos = Cfg::CONTACT;
+      cfgParent = Cfg::DOOR;  
+      openBraces = 0;
+    }     
+    else if (strcmp(token, "Relay") == 0) {   
+      cfgPos = Cfg::RELAY;
+      cfgParent = Cfg::DOOR;  
+      openBraces = 0;
+    }         
     //     
     //  "SUB-CONTAINERS"
     //
@@ -504,6 +516,8 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
         case Cfg::DOOR_MONITOR:
         case Cfg::REX:
         case Cfg::LOCK:
+        case Cfg::CONTACT:
+        case Cfg::RELAY:
           strcpy(tempPeripheral.id, token);
       } 
     } 
@@ -515,6 +529,8 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
         case Cfg::DOOR_MONITOR:
         case Cfg::REX:
         case Cfg::LOCK:
+        case Cfg::CONTACT:
+        case Cfg::RELAY:
           tempPeripheral.pin = getPinNumber(token);
           if (!isValidPin) {
             return -1;
@@ -547,6 +563,8 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
         case Cfg::DOOR_MONITOR:
         case Cfg::REX:
         case Cfg::LOCK:
+        case Cfg::CONTACT:
+        case Cfg::RELAY:
         case Cfg::GREEN_LED:
         case Cfg::BEEPER:
           if (strcmp(token, "HIGH") == 0) {
@@ -559,7 +577,7 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
     }
 
     // Token is parsed. Now we need to traverse the container.
-    while ((stream.available()) && (stream.peek() != '\"')) {
+    while ((stream.available()) && (stream.peek() != '"')) {
       
       switch (stream.read()) {
         case ']':
@@ -618,6 +636,18 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
                 tempDoor->addPeripheral(tempPeripheral.id, 
                                         LOCK, 
                                         tempPeripheral.pin, 
+                                        tempPeripheral.activeLevel);
+                break;
+              case Cfg::CONTACT:
+                tempDoor->addPeripheral(tempPeripheral.id,
+                                        CONTACT,
+                                        tempPeripheral.pin,
+                                        tempPeripheral.activeLevel);
+                break;
+              case Cfg::RELAY:
+                tempDoor->addPeripheral(tempPeripheral.id,
+                                        RELAY,
+                                        tempPeripheral.pin,
                                         tempPeripheral.activeLevel);
                 break;
             }
@@ -1036,6 +1066,8 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
           else if (strcmp(value, "opendoor") == 0) cmd = OPENDOOR;
           else if (strcmp(value, "closedoor") == 0) cmd = CLOSEDOOR;
           else if (strcmp(value, "pushrex") == 0) cmd = PUSHREX;
+          else if (strcmp(value, "activateinput") == 0) cmd = ACTIVATEINPUT;
+          else if (strcmp(value, "deactivateinput") == 0) cmd = DEACTIVATEINPUT;          
           else if (strcmp(value, "getperipheralstate") == 0) cmd = GETPERIPHERALSTATE;
           else if (strcmp(value, "getnetworkconfig") == 0) cmd = GETNETWORKCONFIG;
           else if (strcmp(value, "getdoorconfig") == 0) cmd = GETDOORCONFIG;
@@ -1124,7 +1156,23 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
           return;
         }        
         break;      
-
+      
+      // Activate Input command
+      case ACTIVATEINPUT:
+        if (!doorManager.activateInput(doorId, id)) {        
+          apiResponse(false, id_not_found);
+          return;
+        }        
+        break;      
+      
+      // Deactivate Input command
+      case DEACTIVATEINPUT:
+        if (!doorManager.deactivateInput(doorId, id)) {        
+          apiResponse(false, id_not_found);
+          return;
+        }        
+        break;      
+      
       // Get peripheral state command
       case GETPERIPHERALSTATE:
         {
@@ -1217,6 +1265,8 @@ void onStateChange(PACSDoor &door, PACSPeripheral &p) {
     case DOORMONITOR:
     case REX:
     case LOCK:    
+    case CONTACT:
+    case RELAY:  
   
       cout << "[" << door.id << "|" << p.id << "]: ";
 
@@ -1424,6 +1474,20 @@ void onData(WebSocket &socket, char* dataString, unsigned short frameLength) {
   //
   else if (strcmp(cmd->name, "PushREX") == 0) {
     doorManager.pushREX(doorId->valuestring, id->valuestring);
+  }
+
+  //
+  // ActivateInput command
+  //
+  else if (strcmp(cmd->name, "ActivateInput") == 0) {
+    doorManager.activateInput(doorId->valuestring, id->valuestring);
+  }
+
+  //
+  // DeactivateInput command
+  //
+  else if (strcmp(cmd->name, "DeactivateInput") == 0) {
+    doorManager.deactivateInput(doorId->valuestring, id->valuestring);
   }
 
   //

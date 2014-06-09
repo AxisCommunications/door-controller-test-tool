@@ -156,6 +156,47 @@ bool PACSDoorManager::pushREX(char* doorId, char* rexId) {
     return false;    
 }
 
+
+/*
+* 
+*/
+bool PACSDoorManager::activateInput(char* doorId, char* inputId) {        
+
+    PACSDoor* d = findDoorById(doorId);
+    if (d != NULL) {
+        if (d->activateInput(inputId)) {
+            cout << "[" << doorId << "|" << inputId << "]" << F(": Input activated.") << endl;        
+            return true;
+        }
+        else {
+            cout << "Peripheral not found: " << inputId << endl;
+            return false;
+        }        
+    }
+    cout << "Door not found: " << doorId << endl;
+    return false;    
+}
+
+/*
+* 
+*/
+bool PACSDoorManager::deactivateInput(char* doorId, char* inputId) {
+    
+    PACSDoor* d = findDoorById(doorId);
+    if (d != NULL) {
+        if (d->deactivateInput(inputId)) {
+            cout << "[" << doorId << "|" << inputId << "]" << F(": Input deactivated.") << endl;        
+            return true;
+        }
+        else {
+            cout << "Peripheral not found: " << inputId << endl;
+            return false;
+        }                
+    }
+    cout << "Door not found: " << doorId << endl;
+    return false;    
+}
+
 /*
 * Calls the updateLevels function for all the doors in the doors vector.
 * This will read the current levels of all the peripherals connected to the Arduino, 

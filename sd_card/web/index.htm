@@ -26,7 +26,19 @@
       .greenLED-off {
         color:#D74B4B;
       }
-
+      .switch-on {
+        color:#4080FF;
+      }
+      .switch-off {
+        color:#ECE9E4;
+      }
+      .relay-active {
+        color:#03A711;
+      }
+      .relay-inactive {
+        color:#ECE9E4;
+      }
+	  
     </style>
 
 <!--
@@ -153,6 +165,40 @@
   </div>
 </script>
 
+<!-- SWITCH PARTIAL-->
+<script type="text/ng-template" id="switch.htm">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      Input <small class="pull-right text-muted"><em>{{input.Id}}</em></small>
+    </div>
+    <div class="panel-body">
+      <div>   
+		<p ng-show="isConnected()" align="center">
+		  <i class="fa fa-power-off fa-3x" ng-class="{'switch-on': input.IsActive, 'switch-off': !input.IsActive}"></i>
+		</p>
+        <button ng-show="isConnected()" id="inputButton" type="button" class="btn btn-default btn-md btn-block" ng-disabled="!isConnected()" ng-click="getInputButton(door, input).action()">
+          {{getInputButton(door, input).text}}
+        </button>    
+      </div>
+    </div>
+  </div>  
+</script>
+
+<!-- RELAY PARTIAL-->
+<script type="text/ng-template" id="relay.htm">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      Relay <small class="pull-right text-muted"><em>{{relay.Id}}</em></small>
+    </div>
+    <div class="panel-body">
+      <div>   
+		<p ng-show="isConnected()" align="center">
+		  <i class="fa fa-circle fa-2x" ng-class="{'relay-active': relay.IsActive, 'relay-inactive': !relay.IsActive}"></i>
+		</p>
+      </div>
+    </div>
+  </div>  
+</script>
 
 <!-- REX PARTIAL-->
 <script type="text/ng-template" id="rex.htm">
@@ -216,6 +262,14 @@
                         
                         <div class="col-md-6" ng-repeat="lock in door.Lock">
                           <lock></lock>
+                        </div>                        
+
+                        <div class="col-md-6" ng-repeat="input in door.Input">
+                          <switch></switch>
+                        </div>                        
+
+                        <div class="col-md-6" ng-repeat="relay in door.Relay">
+                          <relay></relay>
                         </div>                        
 
                       </div>

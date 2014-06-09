@@ -50,7 +50,9 @@ class PACSDoor {
         bool openDoor(char*);
         bool closeDoor(char*);
         bool pushREX(char*);    
-
+        bool activateInput(char*);
+        bool deactivateInput(char*);
+        
         // Callback called when pin state changes.
         typedef void StateChangeCallback(PACSDoor&, PACSPeripheral&);
         void registerStateChangeCallback(StateChangeCallback*);        

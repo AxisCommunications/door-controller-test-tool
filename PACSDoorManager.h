@@ -37,7 +37,9 @@ class PACSDoorManager {
         bool enterPIN(char*, char*, char*);
         bool openDoor(char*, char*);
         bool closeDoor(char*, char*);
-        bool pushREX(char*, char*);    
+        bool pushREX(char*, char*);   
+        bool activateInput(char*, char*);
+        bool deactivateInput(char*, char*);
         
         void updateLevels();        
         int isPeripheralActive(char*, char*);
