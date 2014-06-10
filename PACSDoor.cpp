@@ -170,7 +170,7 @@ bool PACSDoor::pushREX(char* rexId) {
 bool PACSDoor::activateInput(char* inputId) {        
 
     PACSPeripheral* p = findPeripheralById(inputId);
-    if ((p != NULL) && (p->type == CONTACT)) {
+    if ((p != NULL) && (p->type == DIGITAL_INPUT)) {
         setPinActive(p->pin, p->activeLevel);       
         return true;        
     }
@@ -183,7 +183,7 @@ bool PACSDoor::activateInput(char* inputId) {
 bool PACSDoor::deactivateInput(char* inputId) {
     
     PACSPeripheral* p = findPeripheralById(inputId);
-    if ((p != NULL) && (p->type == CONTACT)) {
+    if ((p != NULL) && (p->type == DIGITAL_INPUT)) {
         setPinInactive(p->pin, p->activeLevel);       
         return true;        
     }

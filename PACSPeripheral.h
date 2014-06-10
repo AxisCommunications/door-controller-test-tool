@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define PERIPHERAL_ID_MAX_LENGTH 16 // The max number of characters for the ID.
 
-typedef enum {GREENLED, BEEPER, DOORMONITOR, REX, LOCK, CONTACT, RELAY} PACSPeripheralType_t;
+typedef enum {GREENLED, BEEPER, DOORMONITOR, REX, LOCK, DIGITAL_INPUT, DIGITAL_OUTPUT} PACSPeripheralType_t;
 
 class PACSPeripheral {    
     public:

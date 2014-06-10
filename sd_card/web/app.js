@@ -569,17 +569,17 @@ app.directive('lock', function() {
   }
 });
 
-app.directive('switch', function() {
+app.directive('digitalinput', function() {
   return {
     restrict: 'E',
-    templateUrl: 'switch.htm'
+    templateUrl: 'input.htm'
   }
 });
 
-app.directive('relay', function() {
+app.directive('digitaloutput', function() {
   return {
     restrict: 'E',
-    templateUrl: 'relay.htm'
+    templateUrl: 'output.htm'
   }
 });
 

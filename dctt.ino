@@ -270,7 +270,7 @@ bool getNextToken(Stream& stream, char* tokenBuffer, uint8_t length) {
 // the global one.
 namespace Cfg {
   enum Pos {
-            NONE, DOOR, READER, DOOR_MONITOR, REX, LOCK, CONTACT, RELAY, //Container
+            NONE, DOOR, READER, DOOR_MONITOR, REX, LOCK, DIGITAL_INPUT, DIGITAL_OUTPUT, //Container
             WIEGAND, GREEN_LED, BEEPER, //Subcontainer
             ID, PIN, PIN_ZERO, PIN_ONE, ACTIVE //Property
             };
@@ -475,12 +475,12 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
       openBraces = 0;
     }     
     else if (strcmp(token, "Input") == 0) {   
-      cfgPos = Cfg::CONTACT;
+      cfgPos = Cfg::DIGITAL_OUTPUT;
       cfgParent = Cfg::DOOR;  
       openBraces = 0;
     }     
-    else if (strcmp(token, "Relay") == 0) {   
-      cfgPos = Cfg::RELAY;
+    else if (strcmp(token, "Output") == 0) {   
+      cfgPos = Cfg::DIGITAL_OUTPUT;
       cfgParent = Cfg::DOOR;  
       openBraces = 0;
     }         
@@ -516,8 +516,8 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
         case Cfg::DOOR_MONITOR:
         case Cfg::REX:
         case Cfg::LOCK:
-        case Cfg::CONTACT:
-        case Cfg::RELAY:
+        case Cfg::DIGITAL_INPUT:
+        case Cfg::DIGITAL_OUTPUT:
           strcpy(tempPeripheral.id, token);
       } 
     } 
@@ -529,8 +529,8 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
         case Cfg::DOOR_MONITOR:
         case Cfg::REX:
         case Cfg::LOCK:
-        case Cfg::CONTACT:
-        case Cfg::RELAY:
+        case Cfg::DIGITAL_INPUT:
+        case Cfg::DIGITAL_OUTPUT:
           tempPeripheral.pin = getPinNumber(token);
           if (!isValidPin) {
             return -1;
@@ -563,8 +563,8 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
         case Cfg::DOOR_MONITOR:
         case Cfg::REX:
         case Cfg::LOCK:
-        case Cfg::CONTACT:
-        case Cfg::RELAY:
+        case Cfg::DIGITAL_INPUT:
+        case Cfg::DIGITAL_OUTPUT:
         case Cfg::GREEN_LED:
         case Cfg::BEEPER:
           if (strcmp(token, "HIGH") == 0) {
@@ -638,15 +638,15 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
                                         tempPeripheral.pin, 
                                         tempPeripheral.activeLevel);
                 break;
-              case Cfg::CONTACT:
+              case Cfg::DIGITAL_INPUT:
                 tempDoor->addPeripheral(tempPeripheral.id,
-                                        CONTACT,
+                                        DIGITAL_INPUT,
                                         tempPeripheral.pin,
                                         tempPeripheral.activeLevel);
                 break;
-              case Cfg::RELAY:
+              case Cfg::DIGITAL_OUTPUT:
                 tempDoor->addPeripheral(tempPeripheral.id,
-                                        RELAY,
+                                        DIGITAL_OUTPUT,
                                         tempPeripheral.pin,
                                         tempPeripheral.activeLevel);
                 break;
@@ -1265,8 +1265,8 @@ void onStateChange(PACSDoor &door, PACSPeripheral &p) {
     case DOORMONITOR:
     case REX:
     case LOCK:    
-    case CONTACT:
-    case RELAY:  
+    case DIGITAL_INPUT:
+    case DIGITAL_OUTPUT:  
   
       cout << "[" << door.id << "|" << p.id << "]: ";
 
