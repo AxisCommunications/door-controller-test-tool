@@ -15,12 +15,14 @@ The Door Controller Test Tool is an input stimulator and output reader for physi
 * Wiegand reader data
 * REX button
 * Door monitor
+* Digital input/Switches
 
 And providing feedback for output pins, namely:
 
 * Lock
 * Reader green LED
 * Reader beeper
+* Digital output/Relays
 
 Two interfaces are provided for controlling input and reading output; HTTP and WebSockets. Additionally, a Web GUI (which uses the WebSockets interface and resides on the Arduino itself) is provided.
 
