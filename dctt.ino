@@ -475,7 +475,7 @@ int parseDoor(Stream& stream, char* startToken, char* stopToken) {
       openBraces = 0;
     }     
     else if (strcmp(token, "Input") == 0) {   
-      cfgPos = Cfg::DIGITAL_OUTPUT;
+      cfgPos = Cfg::DIGITAL_INPUT;
       cfgParent = Cfg::DOOR;  
       openBraces = 0;
     }     
