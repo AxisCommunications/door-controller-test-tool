@@ -40,7 +40,7 @@ void PACSDoor::addReader(char* id, uint8_t pin0, uint8_t pin1) {
 * Adds a new peripheral to the door.
 */
 void PACSDoor::addPeripheral(char* id, PACSPeripheralType_t type, uint8_t pin, uint8_t activeLevel) {
-    
+
     peripherals.push_back(PACSPeripheral(id, type, pin, activeLevel));
 }
 
@@ -159,6 +159,32 @@ bool PACSDoor::pushREX(char* rexId) {
         setPinActive(p->pin, p->activeLevel);      
         delay(10);
         setPinInactive(p->pin, p->activeLevel);        
+        return true;        
+    }
+    return false;    
+}
+
+/*
+*
+*/
+bool PACSDoor::activateInput(char* inputId) {        
+
+    PACSPeripheral* p = findPeripheralById(inputId);
+    if ((p != NULL) && (p->type == DIGITAL_INPUT)) {
+        setPinActive(p->pin, p->activeLevel);       
+        return true;        
+    }
+    return false;    
+}
+
+/*
+*
+*/
+bool PACSDoor::deactivateInput(char* inputId) {
+    
+    PACSPeripheral* p = findPeripheralById(inputId);
+    if ((p != NULL) && (p->type == DIGITAL_INPUT)) {
+        setPinInactive(p->pin, p->activeLevel);       
         return true;        
     }
     return false;    

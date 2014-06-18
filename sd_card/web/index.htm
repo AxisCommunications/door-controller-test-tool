@@ -26,7 +26,19 @@
       .greenLED-off {
         color:#D74B4B;
       }
-
+      .input-active {
+        color:#4080FF;
+      }
+      .input-inactive {
+        color:#ECE9E4;
+      }
+      .output-active {
+        color:#03A711;
+      }
+      .output-inactive {
+        color:#ECE9E4;
+      }
+	  
     </style>
 
 <!--
@@ -153,6 +165,40 @@
   </div>
 </script>
 
+<!-- INPUT PARTIAL-->
+<script type="text/ng-template" id="input.htm">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      Input <small class="pull-right text-muted"><em>{{input.Id}}</em></small>
+    </div>
+    <div class="panel-body">
+      <div>   
+		<p ng-show="isConnected()" align="center">
+		  <i class="fa fa-power-off fa-3x" ng-class="{'input-active': input.IsActive, 'input-inactive': !input.IsActive}"></i>
+		</p>
+        <button ng-show="isConnected()" id="inputButton" type="button" class="btn btn-default btn-md btn-block" ng-disabled="!isConnected()" ng-click="getInputButton(door, input).action()">
+          {{getInputButton(door, input).text}}
+        </button>    
+      </div>
+    </div>
+  </div>  
+</script>
+
+<!-- OUTPUT PARTIAL-->
+<script type="text/ng-template" id="output.htm">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      Output <small class="pull-right text-muted"><em>{{output.Id}}</em></small>
+    </div>
+    <div class="panel-body">
+      <div>   
+		<p ng-show="isConnected()" align="center">
+		  <i class="fa fa-lightbulb-o fa-3x" ng-class="{'output-active': output.IsActive, 'output-inactive': !output.IsActive}"></i>
+		</p>
+      </div>
+    </div>
+  </div>  
+</script>
 
 <!-- REX PARTIAL-->
 <script type="text/ng-template" id="rex.htm">
@@ -216,6 +262,14 @@
                         
                         <div class="col-md-6" ng-repeat="lock in door.Lock">
                           <lock></lock>
+                        </div>                        
+
+                        <div class="col-md-6" ng-repeat="input in door.Input">
+                          <digitalinput></digitalinput>
+                        </div>                        
+
+                        <div class="col-md-6" ng-repeat="output in door.Output">
+                          <digitaloutput></digitaloutput>
                         </div>                        
 
                       </div>

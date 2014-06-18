@@ -50,6 +50,8 @@ void PACSPeripheral::initialize() {
     switch (type) {
         case DOORMONITOR:
         case REX:
+        case DIGITAL_INPUT:
+        case DIGITAL_OUTPUT:
             pinMode(pin, OUTPUT);
             digitalWrite(pin, initialLevel);    
             break;                        
@@ -77,7 +79,9 @@ void PACSPeripheral::updateLevels() {
         case REX:
         case GREENLED:
         case BEEPER:
-        case LOCK:                                
+        case LOCK:   
+        case DIGITAL_INPUT:
+        case DIGITAL_OUTPUT:
             currentLevel = digitalRead(pin);
             break;
 

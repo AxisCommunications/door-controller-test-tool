@@ -166,6 +166,24 @@ app.factory('WebsocketService', function($http, $location) {
     }));
   }
 
+  service.activateInput = function(doorId, id) {    
+    service.ws.send(JSON.stringify({
+      "ActivateInput": {
+        "DoorId": doorId,
+        "Id": id
+      }   
+    }));
+  }      
+
+  service.deactivateInput = function(doorId, id) {    
+    service.ws.send(JSON.stringify({
+      "DeactivateInput": {
+        "DoorId": doorId,
+        "Id": id
+      }   
+    }));
+  }      
+  
   service.requestUpdate = function() {    
     service.ws.send(JSON.stringify({
       "RequestUpdate": {}   
@@ -284,6 +302,18 @@ app.controller('DoorsCtrl', ['$scope', 'ConfigService', 'WebsocketService', 'Ale
     $scope.closeDoor = function(doorId, id) {
       if (doorId && id) {
         WebsocketService.closeDoor(doorId, id);
+      }
+    };
+	
+    $scope.activateInput = function(doorId, id) {
+      if (doorId && id) {
+        WebsocketService.activateInput(doorId, id);
+      }
+    };
+
+    $scope.deactivateInput = function(doorId, id) {
+      if (doorId && id) {
+        WebsocketService.deactivateInput(doorId, id);
       }
     };
 
@@ -409,6 +439,40 @@ app.controller('DoorsCtrl', ['$scope', 'ConfigService', 'WebsocketService', 'Ale
       return button;
     }
 
+    /*
+    * Returns the Input activate/deactivate button text, depending on input state. 
+	* Input button text should reflect the status of the contact, i.e. Activate when
+	* deactivated and Deactivate when activated.
+    */
+    $scope.getInputButton = function(door, input) {    
+      var button = {"text": "",
+                    "action": null};
+      
+      var doorId = door["Id"];
+      var inputId = input["Id"];
+      
+      // First check that we know the current active state for the input.
+      if (!input.hasOwnProperty("IsActive")) {        
+        return button;
+      }
+      else {        
+		  if (input["IsActive"]) {
+			button.text = "Deactivate";
+			button.action = function() {
+			  $scope.deactivateInput(doorId, inputId);
+			};
+		  } 
+		  else {
+			button.text = "Activate";
+			button.action = function() {
+			  $scope.activateInput(doorId, inputId);
+			};
+		  }
+	  }
+	  
+      return button;
+    }
+	
 
     /*
     * Handle updates from the Arduino.
@@ -504,6 +568,21 @@ app.directive('lock', function() {
     templateUrl: 'lock.htm'
   }
 });
+
+app.directive('digitalinput', function() {
+  return {
+    restrict: 'E',
+    templateUrl: 'input.htm'
+  }
+});
+
+app.directive('digitaloutput', function() {
+  return {
+    restrict: 'E',
+    templateUrl: 'output.htm'
+  }
+});
+
 
 
 window.onbeforeunload = function(e) {
