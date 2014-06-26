@@ -52,18 +52,19 @@ The following dependencies need to be downloaded and placed in your Arduino envi
 2. [StandardCplusplus](https://github.com/maniacbug/StandardCplusplus)
 3. [Webduino](https://github.com/sirleech/Webduino)
 4. [aJSON](https://github.com/interactive-matter/aJson)
+5. [Entropy](https://code.google.com/p/avr-hardware-random-number-generation/)
 
 NOTE: After installing the StandardCplusplus library, edit the [ArduinoLibraryFolder]/StandardCplusplus/system_configuration.h file and change
 `#define __UCLIBCXX_STL_BUFFER_SIZE__ 8` to `#define __UCLIBCXX_STL_BUFFER_SIZE__ 0`. We do this to avoid the vector implementation from allocating too much memory.
 
 ### Basic Installation Steps
 1. Clone the Door Controller Test Tool repository to your hard drive.
-2. Edit the sd_card/config/pins.cfg file to create pin mappings. See “Configuring the Pins” in the wiki for further details.
-3. Edit the sd_card/config/doors.cfg file to create logical doors. See “Configuring the Doors” in the wiki  for further details.
-4. Edit the sd_card/config/network.cfg to set up the Arduino network interface. See “Configuring the Network” in the wiki  for further details.
-5. Wire up the Arduino to the PACS device according to the pins- and doors configuration. See “Connecting the Arduino to the PACS Device” in the wiki  for further details.
-6. Format the SD card to FAT16, copy the contents of sd_card to the root of the card and insert it into the Arduino Ethernet Shield SD card slot.
-7. Upload the Door Controller Test Tool software to the Arduino. See “Uploading the Door Controller Test Tool Software” in the wiki for further details.
+2. Format the SD card to FAT16 and insert it into the Arduino Ethernet Shield SD card slot.
+3. Upload the Door Controller Test Tool software to the Arduino. See “Uploading the Door Controller Test Tool Software” in the wiki for further details.
+4. Configure the Network Settings. See "Configuring the Network" in the wiki for further details.
+5. Create pin mappings. See "Configuring the Pins" in the wiki for futher details.
+6. Create the logical doors. See "Configuring the Doors" in the wiki for further details.
+7. Wire up the Arduino to the PACS device according to the pins- and doors configuration. See “Connecting the Arduino to the PACS Device” in the wiki  for further details.
 8. You should now be able to start using Door Controller Test Tool by navigating to its IP address in a browser (or sending commands via HTTP/Websockets). See “Interfacing with the Door Controller Test Tool Software” in the wiki for further details
 
 ### Detailed Instructions

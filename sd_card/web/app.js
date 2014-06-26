@@ -20,6 +20,9 @@ app.config(['$routeProvider',
         redirectTo: '/'
       });
   }]);
+  
+  
+
 
 
 /*************************************************************************
@@ -31,17 +34,45 @@ app.config(['$routeProvider',
 * Service to get the currect door configuration.
 */     
 app.factory('ConfigService', function($http, $location) {
-  var doors = [];
+
   var arduinoUrl = 'http://' + $location.host();
   if (!($location.port() == 80)) {
     arduinoUrl += ":" + $location.port();
    }
 
-  return {
+  return {	
+    getNetworkConfig: function(successCallback, errorCallback) {        
+      return $http.get(arduinoUrl + '/networksettings.json', {timeout: 5000})
+		.then(successCallback, errorCallback);            
+    },
+	
+	setNetworkConfig: function(settings, errorCallback) {
+	  return $http.post(arduinoUrl + '/networksettings.json', settings)
+		.error(errorCallback);
+	},
+	
+    getPinConfig: function(successCallback, errorCallback) {        
+      return $http.get(arduinoUrl + '/pins.json', {timeout: 5000})
+		.then(successCallback, errorCallback);            
+    },
+	
+	setPinConfig: function(pinConfig, errorCallback) {
+	  return $http.post(arduinoUrl + '/pins.json', pinConfig)
+		.error(errorCallback);
+	},
+	
     getDoorConfig: function(successCallback, errorCallback) {        
-      return $http.get(arduinoUrl + '/api?cmd=getdoorconfig', {timeout: 5000})
-      .then(successCallback, errorCallback);            
-    }
+      return $http.get(arduinoUrl + '/doors.json', {timeout: 5000})
+		.then(successCallback, errorCallback);            
+    },
+	
+	setDoorConfig: function(doorConfig, errorCallback) {
+	  return $http.post(arduinoUrl + '/doors.json', doorConfig)
+		.error(errorCallback);
+	}
+	
+	
+	//resetNetworkConfig:
   }
 });
 
@@ -182,13 +213,13 @@ app.factory('WebsocketService', function($http, $location) {
         "Id": id
       }   
     }));
-  }      
-  
+  }  
+
   service.requestUpdate = function() {    
     service.ws.send(JSON.stringify({
       "RequestUpdate": {}   
     }));
-  }  
+  }    
 
   return service;
 
@@ -535,6 +566,118 @@ app.controller('DoorsCtrl', ['$scope', 'ConfigService', 'WebsocketService', 'Ale
 
 }]);
 
+app.controller('ConfigCtrl', ['$scope', 'ConfigService', 'WebsocketService', 'AlertService',
+  function($scope, ConfigService, WebsocketService, AlertService) {  
+
+  ConfigService.getNetworkConfig(
+	  // If request succeeded, create the network object.
+	  function(response) {
+	    if (response.status == 200) {
+          try {
+            JSON.stringify(response.data)
+          } catch (e) {
+            AlertService.addAlert("danger", "Network config is not in correct JSON format: \"" + e + "\"");    
+          }
+		  $scope.MAC = []
+		  for (var i in response.data.MAC) {
+			$scope.MAC.push(response.data.MAC[i].toString(16).toUpperCase());
+		  }
+		  $scope.MACAddress = $scope.MAC[0] + ":" + $scope.MAC[1] + ":" + $scope.MAC[2] + ":" + $scope.MAC[3] + ":" + $scope.MAC[4] + ":" + $scope.MAC[5];
+		  $scope.network = response.data;
+		}
+	  },
+	  // If request failed we show an alert
+	  function(response) {
+	    AlertService.addAlert("danger", "Could not get network configuration from Arduino.");
+	  }
+	);
+	
+  $scope.setNetworkConfig = function() {
+	  if ($scope.network) {
+		  for (var i = 0; i < $scope.MAC.length; i++) {
+			$scope.network.MAC[i] = parseInt($scope.MAC[i], 16);
+		  }
+		  ConfigService.setNetworkConfig($scope.network, 
+		  function(response) {
+		     AlertService.addAlert("danger", "Could not set network configuration on Arduino.");
+		  }
+	    );	
+	  }
+	};
+	
+  ConfigService.getPinConfig(
+	  // If request succeeded, create the network object.
+	  function(response) {
+	    if (response.status == 200) {
+		  $scope.pinKeys = [];
+          try {
+            JSON.stringify(response.data)
+          } catch (e) {
+            AlertService.addAlert("danger", "Pin config is not in correct JSON format: \"" + e + "\"");    
+          }
+		  $scope.pins = response.data;
+		  for (var key in $scope.pins) {             
+			$scope.pinKeys.push(key);
+          }		  
+		}
+	  },
+	  // If request failed we show an alert
+	  function(response) {
+	    AlertService.addAlert("danger", "Could not get pin configuration from Arduino.");
+	  }
+	);
+	
+  $scope.setPinConfig = function() {
+      if ($scope.pins) {
+	    // Check that it is at least JSON
+		try {
+			ConfigService.setPinConfig($scope.pins,
+			function(response) {
+					AlertService.addAlert("danger", "Could not post PIN configuration to Arduino.");
+				}
+			);
+		} catch(exp) {
+			AlertService.addAlert("danger", "The text is not a valid JSON object.");
+		};
+      }
+    };
+
+  ConfigService.getDoorConfig(
+	  // If request succeeded, create the door config object.
+	  function(response) {
+	    if (response.status == 200) {
+          try {
+            $scope.doorConfig = JSON.stringify(response.data, null, "\t");
+          } catch (e) {
+            AlertService.addAlert("danger", "Door config is not in correct JSON format: \"" + e + "\"");    
+          }
+		}
+	  },
+	  // If request failed we show an alert
+	  function(response) {
+	    AlertService.addAlert("danger", "Could not get door configuration from Arduino.");
+	  }
+	);
+	
+  $scope.setDoorConfig = function(doorConfig) {
+      if (doorConfig) {
+	    // Check that it is at least JSON
+		try {
+		    var jsonDoorConfig = JSON.parse(doorConfig);
+			ConfigService.setDoorConfig(jsonDoorConfig,
+			function(response) {
+					AlertService.addAlert("danger", "Could not post Door configuration to Arduino.");
+				}
+			);
+		} catch(exp) {
+			AlertService.addAlert("danger", "The text is not a valid JSON object.");
+		};
+      }
+    };
+		
+}]);
+
+
 
 /*************************************************************************
 *
@@ -581,6 +724,30 @@ app.directive('digitaloutput', function() {
     restrict: 'E',
     templateUrl: 'output.htm'
   }
+});
+
+app.directive('hexNumber', function () {
+    return {
+        restrict: 'AC',
+        require: '?ngModel',
+        link: function (scope, element, attrs, ngModel) {
+            if (!ngModel) return;
+            ngModel.$parsers.unshift(function (inputValue) {
+                var digits = inputValue.split('').filter(function (s) { 
+															return (!isNaN(s) && s != ' ') ||
+																	s.toUpperCase() == "A" ||
+																	s.toUpperCase() == "B" ||
+																	s.toUpperCase() == "C" ||
+																	s.toUpperCase() == "D" ||
+																	s.toUpperCase() == "E" ||
+																	s.toUpperCase() == "F"; 
+														}).join('');
+                ngModel.$viewValue = digits;
+                ngModel.$render();
+                return digits;
+            });
+        }
+    };
 });
 
 

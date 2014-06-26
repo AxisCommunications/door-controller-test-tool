@@ -306,94 +306,240 @@
 </script>
 
 <!-- CONFIG PARTIAL-->
-<script type="text/ng-template" id="config.htm">
+<script type="text/ng-template" id="config.htm"><div ng-controller="ConfigCtrl"><tabset>
+
+<tab><tab-heading ng-class="{'hand': true}"><strong>Network</strong></tab-heading><br>
+
+  <div ng-show="!network">
+    <p align="center">
+	  <i class="fa fa-spinner fa-spin fa-5x"></i>
+	</p>
+	<p align="center">Loading network configuration...</p>
+  </div> 
+  <div ng-show="network">	
+
   <div class="panel panel-default">
     <div class="panel-heading">
-      Network Settings
+      Settings
     </div>
     <div class="panel-body">
-      TODO
-      <!--
+
       <form role="form">
-        
-        <div class="form-group">
-            <div class="checkbox">
-              <label>
-                <input type="checkbox"> DHCP Enabled
-              </label>
-            </div>
-        </div>
-
 
         <div class="form-group">
-          <label for="inputMACAddress">MAC Address</label>
-            <input type="text" class="form-control" id="inputMACAddress" placeholder="MAC Address">
-        </div>
+	      <div class="row">
+	        <div class="col-md-2"><label>MAC Address</label></div>
+			<div class="col-md-10">
+			  <p class="form-control-static">{{MACAddress}}</p>
+			</div>
+		  </div>
+	      <div class="row">
+	        <div class="col-md-2"><label>IP Address</label></div>
+			<div class="col-md-10"><p class="form-control-static">{{network.Ethernet.IP}}</p></div>
+		  </div>
+	      <div class="row">
+	        <div class="col-md-2"><label>Subnet Mask</label></div>
+			<div class="col-md-10"><p class="form-control-static">{{network.Ethernet.Subnet}}</p></div>
+		  </div>
+	      <div class="row">
+	        <div class="col-md-2"><label>Gateway</label></div>
+			<div class="col-md-10"><p class="form-control-static">{{network.Ethernet.Gateway}}</p></div>
+		  </div>
+	      <div class="row">
+	        <div class="col-md-2"><p class="form-control-static">DNS</label></div>
+			<div class="col-md-10"><p class="form-control-static">{{network.Ethernet.DNS}}</p></div>
+		  </div>
+        </div>    
+	</div>
+    <div class="panel-heading">
+      Configuration
+    </div>
+    <div class="panel-body">
 
         <div class="form-group">
-          <label for="inputIPAddress">IP Address</label>
-            <input type="text" class="form-control" id="inputIPAddress" placeholder="IP Address">
-        </div>
-
-        <div class="form-group">
-          <label for="inputNetmask">Netmask</label>
-            <input type="text" class="form-control" id="inputNetmask" placeholder="Netmask">
-        </div>
-
-        <div class="form-group">
-          <label for="inputGateway">Gateway</label>
-            <input type="text" class="form-control" id="inputGateway" placeholder="Gateway">
-        </div>
-
-        <div class="form-group">
-          <label for="inputDNS">DNS</label>
-            <input type="text" class="form-control" id="inputDNS" placeholder="DNS">
-        </div>
-
-        <div class="row">
-          
-          <div class="col-md-6">
-            <div class="form-group">
-              <label for="inputHTTPPort">HTTP Port</label>
-              <input type="number" min="0" max="65535" class="form-control" id="inputHTTPPort" placeholder="80">
-            </div>  
-          </div>            
-          <div class="col-md-6">
-            <div class="form-group">
-              <label for="inputWebsocketPort">WebSocket Port</label>
-              <input type="number" min="0" max="65535" class="form-control" id="inputWebsocketPort" placeholder="8888">      
-            </div>  
+	      <div class="row">
+	        <div class="col-md-2"></div>
+			<div class="col-md-4">
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" id="inputDHCPEnabled" ng-model="network.DHCPEnabled" ng-init="checked = {{network.DHCPEnabled}}" ng-click="">DHCP Enabled
+		        </label>
+			  </div>
+			</div>
           </div>
-
+        </div>    
+		
+        <div class="form-group">
+	      <div class="row">
+	        <div class="col-md-2">
+              <label>MAC Address</label>
+		    </div>
+			<div class="col-md-6">
+			  <table style="border-collapse:separate;border-spacing:10px"><tr>
+			    <td><input type="input" class="form-control hexNumber" maxlength="2" placeholder="00" ng-model="MAC[0]" ng-disabled="network.EEPROM"></td>
+			    <td><input type="input" class="form-control hexNumber" maxlength="2" placeholder="00" ng-model="MAC[1]" ng-disabled="network.EEPROM"></td>
+			    <td><input type="input" class="form-control hexNumber" maxlength="2" placeholder="00" ng-model="MAC[2]" ng-disabled="network.EEPROM"></td>
+			    <td><input type="input" class="form-control hexNumber" maxlength="2" placeholder="00" ng-model="MAC[3]" </td>
+			    <td><input type="input" class="form-control hexNumber" maxlength="2" placeholder="00" ng-model="MAC[4]" </td>
+			    <td><input type="input" class="form-control hexNumber" maxlength="2" placeholder="00" ng-model="MAC[5]" </td>
+			  </tr></table>
+			</div>
+		  </div>
         </div>    
 
         <div class="form-group">
-            <button type="submit" class="btn btn-default">Apply</button>
+		  <div class="row">
+		    <div class="col-md-2">
+              <label for="inputIPAddress0">IP Address</label>
+		    </div>
+			<div class="col-md-10">
+			  <table  style="border-collapse:separate;border-spacing:10px"><tr>
+			  <td><input type="number" min="0" max="255" width="200" class="form-control" id="inputIP0" placeholder="0" ng-model="network.IP[0]"></td>
+			  <td><input type="number" min="0" max="255" width="300" class="form-control" id="inputIP1" placeholder="0" ng-model="network.IP[1]"></td>
+			  <td><input type="number" min="0" max="255" width="400" class="form-control" id="inputIP2" placeholder="0" ng-model="network.IP[2]"></td>
+			  <td><input type="number" min="0" max="255" width="500" class="form-control" id="inputIP3" placeholder="0" ng-model="network.IP[3]"></td>
+			  </tr></table>
+			</div>
+			
+          </div>
+        </div>    
+
+        <div class="form-group">
+		  <div class="row">
+		    <div class="col-md-2">
+              <label for="inputNetmask0">Subnet Mask</label>
+			</div>
+			<div class="col-md-10">
+			  <table style="border-collapse:separate;border-spacing:10px"><tr>
+			  <td><input type="number" min="0" max="255" width="200" class="form-control" id="inputSubnet0" placeholder="0" ng-model="network.Subnet[0]"></td>
+			  <td><input type="number" min="0" max="255" width="300" class="form-control" id="inputSubnet1" placeholder="0" ng-model="network.Subnet[1]"></td>
+			  <td><input type="number" min="0" max="255" width="400" class="form-control" id="inputSubnet2" placeholder="0" ng-model="network.Subnet[2]"></td>
+			  <td><input type="number" min="0" max="255" width="500" class="form-control" id="inputSubnet3" placeholder="0" ng-model="network.Subnet[3]"></td>
+			  </tr></table>
+			</div>
+		  </div>
+        </div>    
+
+        <div class="form-group">
+		  <div class="row">
+		    <div class="col-md-2">
+              <label for="inputGateway0">Gateway</label>
+			</div>
+			<div class="col-md-10">
+			  <table style="border-collapse:separate;border-spacing:10px"><tr>
+			  <td><input type="number" min="0" max="255" width="200" class="form-control" id="inputGateway0" placeholder="0" ng-model="network.Gateway[0]"></td>
+			  <td><input type="number" min="0" max="255" width="300" class="form-control" id="inputGateway1" placeholder="0" ng-model="network.Gateway[1]"></td>
+			  <td><input type="number" min="0" max="255" width="400" class="form-control" id="inputGateway2" placeholder="0" ng-model="network.Gateway[2]"></td>
+			  <td><input type="number" min="0" max="255" width="500" class="form-control" id="inputGateway3" placeholder="0" ng-model="network.Gateway[3]"></td>
+			  </tr></table>
+			</div>
+		  </div>
+        </div>    
+
+        <div class="form-group">
+		  <div class="row">
+		    <div class="col-md-2">
+              <label for="inputDNS0">DNS</label>
+		    </div>
+			<div class="col-md-10">
+			  <table style="border-collapse:separate;border-spacing:10px"><tr>
+			  <td><input type="number" min="0" max="255" width="200" class="form-control" id="inputDNS0" placeholder="0" ng-model="network.DNS[0]"></td>
+			  <td><input type="number" min="0" max="255" width="300" class="form-control" id="inputDNS1" placeholder="0" ng-model="network.DNS[1]"></td>
+			  <td><input type="number" min="0" max="255" width="400" class="form-control" id="inputDNS2" placeholder="0" ng-model="network.DNS[2]"></td>
+			  <td><input type="number" min="0" max="255" width="500" class="form-control" id="inputDNS3" placeholder="0" ng-model="network.DNS[3]"></td>
+			  </tr></table>
+			</div>
+		  </div>
+        </div>    
+
+        <div class="form-group">
+          <div class="row">
+            <div class="col-md-2">
+              <label for="inputHTTPPort">HTTP Port</label>
+            </div>  
+			<div class="col-md-10">
+			  <table style="border-collapse:separate;border-spacing:10px"><tr>
+			    <td><input type="number" min="0" max="65535" class="form-control" id="inputHTTPPort" ng-model="network.HTTPPort" placeholder="80"></td>
+			  </tr></table>
+			</div>  
+		  </div>
+        </div>    
+
+        <div class="form-group">
+		  <div class="row">
+            <div class="col-md-2">
+              <label for="inputWebsocketPort">WebSocket Port</label>
+            </div>  
+			<div class="col-md-10">
+			  <table style="border-collapse:separate;border-spacing:10px"><tr>
+			    <td><input type="number" min="0" max="65535" class="form-control" id="inputWebsocketPort" ng-model="network.WebsocketPort" placeholder="8888"></td>
+			  </tr></table>
+			</div>  
+          </div>
+        </div>    
+
+        <div class="form-group">
+          <button type="submit" class="btn btn-default" ng-click="setNetworkConfig()">Apply</button>
         </div>
       </form> 
-      -->
+
     </div> 
   </div>
+  </div>
+</tab>
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-      PIN Mappings
-    </div>
-    <div class="panel-body">
-      TODO
-    </div>
-</div>
+<tab><tab-heading ng-class="{'hand': true}"><strong>Pin Mappings</strong></tab-heading><br>
+  <div ng-show="!pins">
+    <p align="center">
+	  <i class="fa fa-spinner fa-spin fa-5x"></i>
+	</p>
+	<p align="center">Loading PIN Mappings...</p>
+  </div> 
+  <div ng-show="pins">
+    <div class="panel panel-default">
+      <div class="panel-body">
+        <form role="form">
+          <div class="form-group">
+	        <div class="row" ng-repeat="key in pinKeys">
+	          <div class="col-md-1"><label>{{key}}</label></div>
+			  <div class="col-md-2">
+			    <input type="text" class="form-control" ng-model="pins[key]" ng-disabled="pins[key]=='RSV'">
+			  </div>
+		    </div>
+	      </div>
+        </form>		
+        <div class="form-group">
+          <button type="submit" class="btn btn-default" ng-click="setPinConfig()">Apply</button>
+        </div>
+	  </div>
+	</div>
+  </div>
+</tab>
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-      Door Configuration
-    </div>
-    <div class="panel-body">
-      TODO
-    </div>
-</div>
+<tab><tab-heading ng-class="{'hand': true}"><strong>Door Configuration</strong></tab-heading><br>
+  <div ng-show="!doorConfig">
+    <p align="center">
+	  <i class="fa fa-spinner fa-spin fa-5x"></i>
+	</p>
+	<p align="center">Loading Door Configuration...</p>
+  </div> 
+  <div ng-show="doorConfig">
+    <div class="panel panel-default">
+      <div class="panel-body">
+        <form role="form">
+          <div class="form-group">
+            <textarea class="form-control" rows="25" ng-model="doorConfig"></textarea>
+		  </div>
+		</form>
+        <div class="form-group">
+          <button type="submit" class="btn btn-default" ng-click="setDoorConfig(doorConfig)">Apply</button>
+        </div>
+	  </div>
+	</div>
+  </div>
+</tab>
+</tabset></div></script>
 
-</script>
 </head>
 
 <!--
