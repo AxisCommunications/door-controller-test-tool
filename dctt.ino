@@ -322,7 +322,7 @@ bool loadPinMappingsFromFile(const char* filename) {
     }
     
     char buf[16];
-    for (i = 0; i < 70; i++) {
+    for (i = 0; i < ...; i++) {
       switch (i)
       {
         case 0:
@@ -345,10 +345,10 @@ bool loadPinMappingsFromFile(const char* filename) {
           else
             sprintf(buf, ",\"A%d\":\"N/A\"", i - 54);
       }
-      fileStream.write((uint8_t*) buf, strlen(buf));
+      fileStream.write(buf, strlen(buf));
     }
     fileStream.write('}');
-    fileStream.close();
+    filestream.close();
   }
   
   // Open the file.

@@ -569,23 +569,6 @@ app.controller('DoorsCtrl', ['$scope', 'ConfigService', 'WebsocketService', 'Ale
 app.controller('ConfigCtrl', ['$scope', 'ConfigService', 'WebsocketService', 'AlertService',
   function($scope, ConfigService, WebsocketService, AlertService) {  
 
-  $scope.allowTab = function(e) {
-	if (e.keyCode == 9) {
-		// get caret position/selection
-		var val = e.currentTarget.value,
-		    start = e.currentTarget.selectionStart,
-			end = e.currentTarget.selectionEnd;
-			
-		e.currentTarget.value = val.substring(0, start) + '\t' + val.substring(end);
-		
-		// put caret at right position again
-		e.currentTarget.selectionStart = e.currentTarget.selectionEnd = start + 1;
-		
-		// prevent focus from moving
-		return false;
-	}
-  }
-  
   ConfigService.getNetworkConfig(
 	  // If request succeeded, create the network object.
 	  function(response) {
