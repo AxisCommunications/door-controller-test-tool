@@ -23,10 +23,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <StandardCplusplus.h>
 #include <serstream>
 #include <EEPROM.h>
-#include <Entropy.h>
 #include <SD.h>
 
-const char* configFilename = "config/network.cfg";
+const char* Network::configFilename = "config/network.cfg";
+uint8_t Network::mac_oui[3] = { 0x90, 0xA2, 0xDA };
 
 Network::Network() {
 
@@ -34,12 +34,11 @@ Network::Network() {
   // OUI. The UID from GHEO Sa, which is the correct one for Arduino Ethernet is 90:A2:DA
   // This is the signature that is used to store the settings in EEPROM if there is no 
   // network.cfg file.
-  uint8_t mac_oui[3] = { 0x90, 0xA2, 0xDA };
     
   // Default settings
   use_dhcp = true;
   memcpy(mac, mac_oui, 3);
-  memset(&mac[3], 0, 3);
+  memset(&mac[3], 0x81, 3);
   
   ip = IPAddress(192, 168, 1, 2);
   subnet = IPAddress(255, 255, 255, 0);
@@ -75,7 +74,7 @@ void Network::Initialize()
   }
   else
   {
-    if (EEPROM.read(1) == mac[0] && EEPROM.read(2) == mac[1] && EEPROM.read(3) == mac[2]) 
+    if (EEPROM.read(1) == mac_oui[0] && EEPROM.read(2) == mac_oui[1] && EEPROM.read(3) == mac_oui[2]) 
     {
       // The settings have been written in EEPROM  
       cout << F("read from EEPROM") << endl;;
@@ -83,13 +82,7 @@ void Network::Initialize()
     }
     else
     {
-      // Randomize the last three bytes of the MAC address
-      Entropy.Initialize();
-      for (int i = 3; i < 6; i++) {
-        mac[i] =  Entropy.random(255);
-      }
-    
-      // Save the settings to EEPROM  
+      // Save the default settings to EEPROM  
       writeSettings();
       
       cout << F("stored to EEPROM") << endl;
@@ -249,7 +242,7 @@ void Network::saveNetworkConfiguration(Stream& stream) {
 */
 void Network::readSettings() {
   int j = 4;
-  j+= readEEPROM(&mac[3], j, 3 * sizeof(uint8_t));
+  j+= readEEPROM(&mac[0], j, sizeof(mac) * sizeof(uint8_t));
   j+= readEEPROM(&use_dhcp, j, sizeof(bool));
   j+= readEEPROM(&ip, j);
   j+= readEEPROM(&subnet, j);
@@ -264,6 +257,7 @@ void Network::readSettings() {
 */
 void Network::writeSettings() {
   int j = 1;
+  j+= writeEEPROM(mac_oui, j, sizeof(mac_oui) * sizeof(uint8_t));
   j+= writeEEPROM(mac, j, sizeof(mac) * sizeof(uint8_t));
   j+= writeEEPROM(&use_dhcp, j, sizeof(bool));
   j+= writeEEPROM(&ip, j);

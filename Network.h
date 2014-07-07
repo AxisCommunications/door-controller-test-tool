@@ -57,6 +57,8 @@ class Network {
     void objectToArray(aJsonObject* object, IPAddress* ip);
     
   public:
+    static const char* configFilename;
+    static uint8_t mac_oui[3];
     bool use_dhcp;
     uint8_t dhcp_refresh_minutes;
     uint8_t mac[6];
