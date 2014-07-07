@@ -52,7 +52,6 @@ The following dependencies need to be downloaded and placed in your Arduino envi
 2. [StandardCplusplus](https://github.com/maniacbug/StandardCplusplus)
 3. [Webduino](https://github.com/sirleech/Webduino)
 4. [aJSON](https://github.com/interactive-matter/aJson)
-5. [Entropy](https://code.google.com/p/avr-hardware-random-number-generation/)
 
 NOTE: After installing the StandardCplusplus library, edit the [ArduinoLibraryFolder]/StandardCplusplus/system_configuration.h file and change
 `#define __UCLIBCXX_STL_BUFFER_SIZE__ 8` to `#define __UCLIBCXX_STL_BUFFER_SIZE__ 0`. We do this to avoid the vector implementation from allocating too much memory.
