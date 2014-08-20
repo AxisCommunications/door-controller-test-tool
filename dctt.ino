@@ -882,7 +882,6 @@ void webAppJsonFile(WebServer &server, WebServer::ConnectionType type, char **ur
     else if (type == WebServer::POST) {
   
       root = aJson.parse(&webstream);
-      // How is this read??
       network.settingsFromJSON(root);
       network.printConfiguration();
       
@@ -1383,7 +1382,7 @@ void onData(WebSocket &socket, char* dataString, unsigned short frameLength) {
     
     network.settingsFromJSON(cmd->child);
     network.printConfiguration();
-    // Can we reset the network here or just simply leave as is until reset?
+    //The new configuration will not take effect until next reset.
     aJson.deleteItem(root);
     return;
   }
