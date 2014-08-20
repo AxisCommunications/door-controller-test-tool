@@ -734,14 +734,14 @@ app.directive('hexNumber', function () {
             if (!ngModel) return;
             ngModel.$parsers.unshift(function (inputValue) {
                 var digits = inputValue.split('').filter(function (s) { 
-															return (!isNaN(s) && s != ' ') ||
-																	s.toUpperCase() == "A" ||
-																	s.toUpperCase() == "B" ||
-																	s.toUpperCase() == "C" ||
-																	s.toUpperCase() == "D" ||
-																	s.toUpperCase() == "E" ||
-																	s.toUpperCase() == "F"; 
-														}).join('');
+                                                            return (!isNaN(s) && s != ' ') ||
+                                                                    s.toUpperCase() == "A" ||
+                                                                    s.toUpperCase() == "B" ||
+                                                                    s.toUpperCase() == "C" ||
+                                                                    s.toUpperCase() == "D" ||
+                                                                    s.toUpperCase() == "E" ||
+                                                                    s.toUpperCase() == "F"; 
+                                                        }).join('');
                 ngModel.$viewValue = digits;
                 ngModel.$render();
                 return digits;
