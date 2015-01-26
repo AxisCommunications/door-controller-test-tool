@@ -37,6 +37,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // Favicon
 #define WEBDUINO_FAVICON_DATA ""
 
+//#define WEBDUINO_SERIAL_DEBUGGING 1
+
+// Receiving larger door configuration files requires
+// a longer timeout, 5 seconds has so far worked well
+#define WEBDUINO_READ_TIMEOUT_IN_MS 5000
+
 // Toggle bonjour/zeroconf functionality.
 #undef BONJOUR_ENABLED
 
@@ -45,6 +51,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "Ethernet.h"
 #include "WebSocket.h"
 #include "WebServer.h"
+
+#include <EEPROM.h>
 
 #include <SD.h>
 
@@ -61,6 +69,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "PACSReader.h"
 #include "PACSPeripheral.h"
 #include "PACSDoorManager.h"
+#include "Network.h"
 
 // For freemem.
 #include "System.h"
@@ -80,6 +89,7 @@ System sys;
 WebServer* webserver;
 WebSocket websocketServer;
 PACSDoorManager doorManager;
+Network network;
 
 // Pin mappings. Index is pin number.
 char digitalPins[54][4];
@@ -89,26 +99,41 @@ char analogPins[16][4];
 char* indexFilename = "index.htm";
 
 // Configuration filenames.
-const char* networkConfigFilename = "config/network.cfg";
 const char* pinsConfigFilename = "config/pins.cfg";
 const char* doorsConfigFilename = "config/doors.cfg";
 
-// Network configuration structure.
-struct config_t
-{
-  bool use_dhcp;
-  uint8_t dhcp_refresh_minutes;
-  uint8_t mac[6];
-  IPAddress ip;
-  IPAddress gateway;
-  IPAddress subnet;
-  IPAddress dns;
-  int httpPort;
-  int websocketPort;
-  } network_config;
-
-unsigned long last_dhcp_renew;
 int last_free_ram = 0;
+
+/*
+* Helper class for reading/writing aJSON to/from the WebServer
+*/
+class WebServeraJsonStream : public aJsonStream {
+public:
+  WebServeraJsonStream(WebServer* webserver_): aJsonStream(NULL), webserver(webserver_) {}
+  
+  virtual bool available()  { 
+    if (bucket != EOF)
+      return true; 
+    return webserver->available(); 
+  }
+
+private:
+  virtual size_t write(uint8_t ch) { return webserver->write(ch); }
+  virtual int getch() { 
+    int retVal = bucket;
+    if (retVal != EOF) {
+      bucket = EOF;
+    } 
+    else {
+      retVal = webserver->read();
+      if (retVal == -1)
+        retVal = EOF;
+    }
+    return retVal; 
+  }
+
+  WebServer* webserver;
+};
 
 // API commands
 typedef enum Command
@@ -120,11 +145,7 @@ typedef enum Command
     PUSHREX,
     ACTIVATEINPUT,
     DEACTIVATEINPUT,
-    GETPERIPHERALSTATE,
-    GETNETWORKCONFIG,
-    GETDOORCONFIG,
-    GETPINCONFIG,
-    SETCONFIG,
+    GETPERIPHERALSTATE,  
     UNDEFINED,
 };
 
@@ -158,42 +179,6 @@ void freeMem() {
   }
 }
 
-
-/*
-* Prints network configuration to serial port.
-*/
-void printNetworkConfiguration() {
-  
-  // MAC address takes a bit of work to format for output.
-  char buff[3];
-  cout << F("MAC: ");
-  for(int i=0; i<6; i++) {
-    sprintf(buff, "%02X", network_config.mac[i]);
-    cout << buff;
-    if (i != 5) cout << ":";
-  }
-  cout << endl;
-
-  cout << F("DHCP ");
-  cout << (network_config.use_dhcp ? F("enabled.") : F("disabled."));
-
-  cout << F("\nIP: ");
-  Ethernet.localIP().printTo(Serial);
-  
-  cout << F("\nSubnet Mask: ");
-  Ethernet.subnetMask().printTo(Serial);
-  
-  cout << F("\nGateway: ");
-  Ethernet.gatewayIP().printTo(Serial);
-  
-  cout << F("\nDNS Server: ");
-  Ethernet.dnsServerIP().printTo(Serial);
-
-  cout << F("\nHTTP Port: ") << (int)network_config.httpPort;
-  cout << F("\nWebsocket Port: ") << (int)network_config.websocketPort;
-
-  cout << F("\n");
-}
 
 /*
 * Sends a file on the SD card to the client.
@@ -230,6 +215,37 @@ void sendFile(WebServer &server, const char* type, const char* filename)
     server.write(txBuffer, bytesRead); 
   }    
   server.printCRLF();        
+  fileStream.close();  
+}
+
+/*
+* Saves a file on the SD card from the client
+*/
+void receiveFile(WebServer &server, const char* filename)
+{
+  byte txBuffer[FILE_TX_BUFFER_SIZE];
+  int bytesRead = 0;
+  P(could_not_open_file) = "Could not open file: ";
+  
+  if (SD.exists((char*) filename))
+    SD.remove((char*) filename);
+
+  File fileStream = SD.open(filename, FILE_WRITE);
+  if (!fileStream) {
+    server.httpFail();
+    server.printP(could_not_open_file);
+    server.print(filename);
+    return;
+  }
+  
+  int c = server.read();
+  // Opening of file was successful
+  while (c != -1) 
+  {
+    fileStream.write(c);
+    c = server.read();
+  }    
+  
   fileStream.close();  
 }
 
@@ -295,14 +311,53 @@ bool loadPinMappingsFromFile(const char* filename) {
   int i = 0;    
   uint8_t pin;
 
+  File fileStream;
+  if (!SD.exists((char*) filename))  {
+    // create a default pin mapping file
+    fileStream = SD.open(filename, FILE_WRITE);
+    if (!fileStream) {
+      cout << F("Error opening ") << filename << endl;
+      return false;    
+    }
+    
+    char buf[16];
+    for (i = 0; i < 70; i++) {
+      switch (i)
+      {
+        case 0:
+          strcpy(buf, "{\"0\":\"RSV\"");
+          break;
+          
+        case 1:
+        case 4:
+        case 10:
+        case 50:
+        case 51:
+        case 52:
+        case 53:
+          sprintf(buf, ",\"%d\":\"RSV\"", i);
+          break;
+          
+        default:
+          if (i < 54)
+            sprintf(buf, ",\"%d\":\"N/A\"", i);
+          else
+            sprintf(buf, ",\"A%d\":\"N/A\"", i - 54);
+      }
+      fileStream.write((uint8_t*) buf, strlen(buf));
+    }
+    fileStream.write('}');
+    fileStream.close();
+  }
+  
   // Open the file.
-  File fileStream = SD.open(filename);    
+  fileStream = SD.open(filename);    
   if (!fileStream) {
     cout << F("Error opening ") << filename << endl;
     return false;
   }  
   
-  while (true) {             
+  while (true) {           
 
     if (cfgPinType == Cfg::DIGITAL) {
       // Get the digital pin number.
@@ -316,7 +371,7 @@ bool loadPinMappingsFromFile(const char* filename) {
       }
       // Get the pin id and save to array.
       getNextToken(fileStream, tokenBuffer, tokenBufferLength);            
-      strcpy(digitalPins[i], tokenBuffer);      
+      strcpy(digitalPins[i], tokenBuffer);  
       digitalPins[i][3] = '\0';
     }   
     else if (cfgPinType == Cfg::ANALOG) { 
@@ -770,159 +825,6 @@ void printDoorConfiguration() {
     }
 }
 
-void parseIPV4string(char* ipAddress, uint8_t* ipbytes) {
-  sscanf(ipAddress, "%d.%d.%d.%d", &ipbytes[0], &ipbytes[1], &ipbytes[2], &ipbytes[3]);
-}
-
-/*
-* Opens the network config file for parsing.
-*
-* The network config file is small enough for us to be able to use aJSON (as
-* opposed to creating our own parser, as with the door and pin configs.)
-*/
-bool parseNetworkConfiguration(Stream& stream) {
-       
-  aJsonObject *root = aJson.parse(&aJsonStream(&stream));
-
-  aJsonObject* dhcpEnabled = aJson.getObjectItem(root, "DHCPEnabled");
-  aJsonObject* macAddress = aJson.getObjectItem(root, "MAC");
-  aJsonObject* ip = aJson.getObjectItem(root, "IP");
-  aJsonObject* gateway = aJson.getObjectItem(root, "Gateway");
-  aJsonObject* subnet = aJson.getObjectItem(root, "Subnet");
-  aJsonObject* dns = aJson.getObjectItem(root, "DNS");
-  aJsonObject* httpPort = aJson.getObjectItem(root, "HTTPPort");
-  aJsonObject* websocketPort = aJson.getObjectItem(root, "WebsocketPort");
-
-  if (!dhcpEnabled) {
-    cout << F("DHCPEnabled key not found in network config file.");
-    return false;
-  }
-  else if (!macAddress) {
-    cout << F("MAC key not found in network config file.");
-    return false;
-  }
-  else if (!ip) {
-    cout << F("IP key not found in network config file.");
-    return false;
-  }
-  else if (!gateway) {
-    cout << F("Gateway key not found in network config file.");
-    return false;
-  }
-  else if (!subnet) {
-    cout << F("Subnet key not found in network config file.");
-    return false;
-  }
-  else if (!dns) {
-    cout << F("DNS key not found in network config file.");
-    return false;
-  }
-  else if (!httpPort) {
-    cout << F("HTTPPort key not found in network config file.");
-    return false;
-  }
-  else if (!websocketPort) {
-    cout << F("WebsocketPort key not found in network config file.");
-    return false;
-  }  
-
-  // DHCP related
-  network_config.use_dhcp = dhcpEnabled->valuebool;
-  network_config.dhcp_refresh_minutes = 60;
-  
-  // Parse the MAC address
-  char macHexStr[2];
-  int macAddressPos = -1;
-  for (int i=0; i<6; i++) {
-    macHexStr[0] = macAddress->valuestring[++macAddressPos];
-    macHexStr[1] = macAddress->valuestring[++macAddressPos];
-    macAddressPos++; //Skip the ":" separator.    
-    network_config.mac[i] = (uint8_t)strtol(macHexStr, NULL, 16);
-  }
-
-  // IP related
-  uint8_t ipbytes[4];
-  parseIPV4string(ip->valuestring, ipbytes);
-  network_config.ip = IPAddress(ipbytes);
-  parseIPV4string(gateway->valuestring, ipbytes);
-  network_config.gateway = IPAddress(ipbytes);
-  parseIPV4string(subnet->valuestring, ipbytes);
-  network_config.subnet = IPAddress(ipbytes);
-  parseIPV4string(dns->valuestring, ipbytes);
-  network_config.dns = IPAddress(ipbytes);
-
-  // Ports
-  network_config.httpPort = (int)httpPort->valueint;
-  network_config.websocketPort = (int)websocketPort->valueint;
-  
-  // Free allocated memory.
-  aJson.deleteItem(root);
-
-  // We've successfully parsed the network file.
-  return true;
-}
-
-/*
-* Loads the network configuration, which should also be in 
-* JSON format. 
-*/
-bool loadNetworkConfigurationFromFile(const char* filename) {
-
-  File networkCfgFile;
-  bool parsingSucceeded;
-  
-  // Open the config file
-  networkCfgFile = SD.open(filename);
-  if (!networkCfgFile) {
-    cout << F("Error opening ") << filename << endl;
-    return false;
-  }           
-
-  parsingSucceeded = parseNetworkConfiguration(networkCfgFile);
-  networkCfgFile.close();
-
-  return (parsingSucceeded ? true : false);
-}
-
-/* *****************************************************************************************************
-* 
-* Networking Section 
-* 
-***************************************************************************************************** */
-
-/*
-* Configures the ethernet shield with our specified network values.
-*/
-bool setupNetwork() {
-
-  // If we're not using DHCP-
-  if (!network_config.use_dhcp) {
-    Ethernet.begin(network_config.mac, network_config.ip, network_config.dns, 
-      network_config.gateway, network_config.subnet);
-  } 
-  // If we ARE using DHCP.
-  else {
-    if (Ethernet.begin(network_config.mac) == 0) {
-      cout << F("Failed to configure Ethernet using DHCP.\n");
-      return false;
-    }
-  }
-  // Disable the SPI
-  digitalWrite(ETHERNET_SELECT_PIN, HIGH);
-
-  return true;
-}
-
-/*
-* Renew the DHCP relase in a given interval.
-*/
-void renewDHCP() {
-  if (network_config.use_dhcp) {
-    Ethernet.maintain();
-    cout << F("DHCP lease renewed.\n");
-  }
-}
-
 /* *****************************************************************************************************
 * 
 * Webserver Section 
@@ -946,6 +848,76 @@ void errorHTML(WebServer &server, WebServer::ConnectionType type, char *url_tail
 }
 
 /*
+* Called for default JSON extension file requests
+*/
+void webAppJsonFile(WebServer &server, WebServer::ConnectionType type, char **url_path, char *url_tail, bool tail_complete)
+{
+  
+  if (type == WebServer::GET) 
+    cout << F("Client is GETting file: ");
+  else if (type == WebServer::POST)
+    cout << F("Client is POSTting file: ");
+  else  
+    cout << F("Client is ???ing file: ");
+  cout << *url_path << endl; 
+  
+  if (strcmp(*url_path, "networksettings.json") == 0)
+  {
+    aJsonObject *root = NULL;
+    WebServeraJsonStream webstream(&server);  
+  
+    //doors.json
+    //pins.json
+    
+    if (type == WebServer::GET) {
+        
+      root = aJson.createObject();
+      network.settingsToJSON(root);
+    
+      // send correct content type
+      server.httpSuccess("application/json");
+      aJson.print(root, &webstream);            
+      server.printCRLF(); 
+    }
+    else if (type == WebServer::POST) {
+  
+      root = aJson.parse(&webstream);
+      network.settingsFromJSON(root);
+      network.printConfiguration();
+      
+    }
+    
+    if (root != NULL) {
+      aJson.deleteItem(root);
+    }
+  }
+  else if (strcmp(*url_path, "doors.json") == 0)
+  {
+    if (type == WebServer::GET) {
+      sendFile(server, "application/json", doorsConfigFilename);
+    } else if (type == WebServer::POST) {
+      receiveFile(server, doorsConfigFilename);
+    }
+  }
+  else if (strcmp(*url_path, "pins.json") == 0)
+  {
+    if (type == WebServer::GET) {
+      sendFile(server, "application/json", pinsConfigFilename);
+    } else if (type == WebServer::POST) {
+      receiveFile(server, pinsConfigFilename);
+    }
+  }
+  else
+  {
+    server.print(F("<html><head><title>HTTP 404</title></head><body>\n"));
+    server.print(F("<h2>HTTP 404 - Not Found</h2>\n"));
+    server.print(F("<p>The requested object can not be found.</p>\n"));
+    server.print(F("</body></html>"));
+  }
+    
+}
+
+/*
 * Called for all the remaining cases. We need to check if the requested file is one we are servering,
 * and if so, send it to the client.
 */
@@ -955,12 +927,11 @@ void webAppFile(WebServer &server, WebServer::ConnectionType type, char **url_pa
   if (type == WebServer::HEAD)
     return;  
 
-  cout << F("Client is requesting file: ") << *url_path << endl;      
-  
   // Check if requested file is one we are serving on SD card.
   if (strcmp(*url_path, "index.htm") == 0 || strcmp(*url_path, "app.js") == 0 ||
     strcmp(*url_path, "keypad.mp3") == 0 || strcmp(*url_path, "favicon.ico") == 0) 
   {  
+    cout << F("Client is requesting file: ") << *url_path << endl;      
     
     // Create a full filename path. 32 characters should be 
     // enough for 8+3 filenames and the folder structure we have.
@@ -982,6 +953,10 @@ void webAppFile(WebServer &server, WebServer::ConnectionType type, char **url_pa
       sendFile(server, "text/html; charset=utf-8", fullFilename);
     }    
 
+  }
+  else if ((*url_path, ".json") != 0)
+  {
+    webAppJsonFile(server, type, url_path, url_tail, tail_complete);
   }
   
   // If we didn't get a match for any of the files we serve, we send the client
@@ -1049,7 +1024,7 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
     return;
 
   // If we receive a http-post, we assume the request is sent with json-data.
-  if (type == WebServer::POST) {}
+  if (type == WebServer::POST) {  }
   
   // If we receive a http-get, we assume the request was issued with URL parameters.
   if (type == WebServer::GET) {    
@@ -1069,9 +1044,6 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
           else if (strcmp(value, "activateinput") == 0) cmd = ACTIVATEINPUT;
           else if (strcmp(value, "deactivateinput") == 0) cmd = DEACTIVATEINPUT;          
           else if (strcmp(value, "getperipheralstate") == 0) cmd = GETPERIPHERALSTATE;
-          else if (strcmp(value, "getnetworkconfig") == 0) cmd = GETNETWORKCONFIG;
-          else if (strcmp(value, "getdoorconfig") == 0) cmd = GETDOORCONFIG;
-          else if (strcmp(value, "getpinconfig") == 0) cmd = GETPINCONFIG;
           else cmd = UNDEFINED;
         }
         // 
@@ -1189,32 +1161,6 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
           return;  
         }
 
-      // Get door config command
-      case GETNETWORKCONFIG:
-        {                  
-          sendFile(server, "application/json", networkConfigFilename);
-          return;    
-        }
-        break;
-
-
-      // Get door config command
-      case GETDOORCONFIG:
-        {                  
-          sendFile(server, "application/json", doorsConfigFilename);
-          return;    
-        }
-        break;
-
-      // Get pin config command
-      case GETPINCONFIG:
-        {                  
-          sendFile(server, "application/json", pinsConfigFilename);
-          return;    
-        }
-        break;
-      
-
       case UNDEFINED:
       default:
         server.httpFail();
@@ -1228,6 +1174,7 @@ void apiCMD(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
 
   }
 }
+
 
 /*
 * Must be called periodically to see if new announcements need to be sent.
@@ -1264,7 +1211,7 @@ void onStateChange(PACSDoor &door, PACSPeripheral &p) {
     case BEEPER:
     case DOORMONITOR:
     case REX:
-    case LOCK:    
+    case LOCK:  
     case DIGITAL_INPUT:
     case DIGITAL_OUTPUT:  
   
@@ -1280,7 +1227,7 @@ void onStateChange(PACSDoor &door, PACSPeripheral &p) {
       }
   
       break;
-  
+    
     default:
       cout << "[" << door.id << "|" << p.id << "]: Unknown periperhal";
       break;
@@ -1299,6 +1246,18 @@ void onStateChange(PACSDoor &door, PACSPeripheral &p) {
   aJson.deleteItem(root);
 
 }
+
+
+/*
+* Renew the DHCP relase in a given interval.
+*/
+void renewDHCP() {
+  if (network.use_dhcp) {
+    Ethernet.maintain();
+    cout << F("DHCP lease renewed.\n");
+  }
+}
+
 
 /* ****************************************************************************************************
 * 
@@ -1359,7 +1318,6 @@ void sendHeartbeat() {
   }
 }
 
-
 /*
 * onConnect()
 * Is called whenever there is a new websocket connection (there can be only 
@@ -1415,6 +1373,18 @@ void onData(WebSocket &socket, char* dataString, unsigned short frameLength) {
     }
     aJson.deleteItem(root);
     return; 
+  }
+  
+  //
+  // UpdateNetworkSettings
+  //
+  if (strcmp(cmd->name, "UpdateNetworkSettings") == 0) {
+    
+    network.settingsFromJSON(cmd->child);
+    network.printConfiguration();
+    //The new configuration will not take effect until next reset.
+    aJson.deleteItem(root);
+    return;
   }
 
   // The rest of the commands require a door- and peripheral id.
@@ -1518,12 +1488,9 @@ void setup()
   setupSDCard();  
   delay(200);
 
-  //a
-  // Load network, pin and door config from SD card.
   //
-  cout << F("Loading network configuration.\n");
-  if (!loadNetworkConfigurationFromFile(networkConfigFilename))
-    while (true) delay(100); 
+  // Load pin and door config from SD card.
+  //
   cout << F("Loading pin configuration.\n");
   if (!loadPinMappingsFromFile(pinsConfigFilename))
     while (true) delay(100); 
@@ -1546,27 +1513,29 @@ void setup()
   // Setup the network.
   //
   cout << F("Setting up the network.\n");
-  setupNetwork();
+  network.setup();
+  digitalWrite(ETHERNET_SELECT_PIN, HIGH);
   
   cout << F("\n*************************************\n");
   cout << F("*  NETWORK CONFIGURATION\n");
   cout << F("*************************************\n\n");
-  printNetworkConfiguration();
+  network.printConfiguration();
 
 #ifdef BONJOUR_ENABLED
   // Start the bonjour/zeroconf service.  
   char* bonjour_hostname = "pacsis";
   EthernetBonjour.begin(bonjour_hostname);
-  EthernetBonjour.addServiceRecord("Pacsis._ws", network_config.websocketPort, MDNSServiceTCP);
+  EthernetBonjour.addServiceRecord("Pacsis._ws", network.websocketPort, MDNSServiceTCP);
   cout << F("Bonjour/ZeroConf name: ") << bonjour_hostname << ".local" << endl;
 #endif
 
   // Setup the server and the routes and begin listening for incoming connections.
-  webserver = new WebServer("", network_config.httpPort);  
+  webserver = new WebServer("", network.httpPort);  
   webserver->setDefaultCommand(&defaultHTML); // Root url.
   webserver->setUrlPathCommand(&webAppFile); // All web files on SD card.
   webserver->setFailureCommand(&errorHTML); // HTTP 400.
   webserver->addCommand("api", &apiCMD); // API route.
+  
   webserver->begin();
 
   // Setup the websocket server and start listening for incoming connections.
@@ -1578,7 +1547,7 @@ void setup()
   websocketServer.begin();
 
   // Register timed events.
-  dhcpRenewalTimer = timer.setInterval(network_config.dhcp_refresh_minutes*60000, renewDHCP);    
+  dhcpRenewalTimer = timer.setInterval(network.dhcp_refresh_minutes*60000, renewDHCP);    
   int freememTimer = timer.setInterval(5000, freeMem);
   #ifdef BONJOUR_ENABLED
     bonjourTimer = timer.setInterval(500, updateBonjour);

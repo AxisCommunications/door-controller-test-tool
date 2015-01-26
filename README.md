@@ -58,12 +58,12 @@ NOTE: After installing the StandardCplusplus library, edit the [ArduinoLibraryFo
 
 ### Basic Installation Steps
 1. Clone the Door Controller Test Tool repository to your hard drive.
-2. Edit the sd_card/config/pins.cfg file to create pin mappings. See “Configuring the Pins” in the wiki for further details.
-3. Edit the sd_card/config/doors.cfg file to create logical doors. See “Configuring the Doors” in the wiki  for further details.
-4. Edit the sd_card/config/network.cfg to set up the Arduino network interface. See “Configuring the Network” in the wiki  for further details.
-5. Wire up the Arduino to the PACS device according to the pins- and doors configuration. See “Connecting the Arduino to the PACS Device” in the wiki  for further details.
-6. Format the SD card to FAT16, copy the contents of sd_card to the root of the card and insert it into the Arduino Ethernet Shield SD card slot.
-7. Upload the Door Controller Test Tool software to the Arduino. See “Uploading the Door Controller Test Tool Software” in the wiki for further details.
+2. Format the SD card to FAT16 and insert it into the Arduino Ethernet Shield SD card slot.
+3. Upload the Door Controller Test Tool software to the Arduino. See “Uploading the Door Controller Test Tool Software” in the wiki for further details.
+4. Configure the Network Settings. See "Configuring the Network" in the wiki for further details.
+5. Create pin mappings. See "Configuring the Pins" in the wiki for futher details.
+6. Create the logical doors. See "Configuring the Doors" in the wiki for further details.
+7. Wire up the Arduino to the PACS device according to the pins- and doors configuration. See “Connecting the Arduino to the PACS Device” in the wiki  for further details.
 8. You should now be able to start using Door Controller Test Tool by navigating to its IP address in a browser (or sending commands via HTTP/Websockets). See “Interfacing with the Door Controller Test Tool Software” in the wiki for further details
 
 ### Detailed Instructions
