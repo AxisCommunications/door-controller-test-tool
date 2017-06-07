@@ -1219,11 +1219,11 @@ void onStateChange(PACSDoor &door, PACSPeripheral &p) {
 
       if (p.isActive()) {
         cout << F("is ACTIVE\n");
-        aJson.addTrueToObject(update, "IsActive");
+        aJson.addBooleanToObject(update, "IsActive", true);
       }
       else {
         cout << F("is INACTIVE\n");
-        aJson.addFalseToObject(update, "IsActive");  
+        aJson.addBooleanToObject(update, "IsActive", false);
       }
   
       break;
