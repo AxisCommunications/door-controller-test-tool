@@ -1,3 +1,7 @@
+END-OF-LIFE NOTICE
+=========================
+Axis Communications is no longer maintaining this project.
+
 Door Controller Test Tool
 =========================
 
